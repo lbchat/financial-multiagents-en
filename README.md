@@ -1,32 +1,33 @@
 # QuantumFinance AI Agent
 
-Sistema multiagente que recomenda **COMPRAR / VENDER / AGUARDAR** para ações brasileiras, combinando indicadores técnicos com análise de sentimento de notícias — com justificativa auditável em linguagem natural, não uma caixa-preta.
+Multi-agent system that recommends **COMPRAR / VENDER / AGUARDAR** (the literal application values for buy / sell / hold) for Brazilian stocks by combining technical indicators with news sentiment analysis—with an auditable natural-language rationale rather than a black box.
 
-## O problema e a solução
+## The problem and the solution
 
-Decidir comprar, vender ou esperar uma ação exige cruzar dois tipos de informação que normalmente vivem em lugares separados: **o que os números dizem** (preço, RSI, MACD, médias móveis) e **o que está sendo noticiado** sobre a empresa (resultado trimestral, troca de diretoria, risco regulatório). Fazer isso manualmente, todos os dias, para várias ações, não escala.
+Deciding whether to buy, sell, or hold a stock requires combining two types of information that usually live in separate places: **what the numbers say** (price, RSI, MACD, moving averages) and **what is being reported** about the company (quarterly results, management changes, regulatory risk). Doing this manually every day for several stocks does not scale.
 
-A solução aqui é um **agente multiagente**: um orquestrador que decide se a pergunta do usuário pede uma recomendação completa ou só um dado pontual, e direciona o trabalho para agentes especializados — um que só olha mercado, um que só olha sentimento, e um que combina os dois numa recomendação final com a lógica explicada. Cada recomendação fica registrada em CSV com todos os indicadores que a motivaram, então é possível voltar e auditar por que o agente decidiu o que decidiu.
+The solution here is a **multi-agent system**: an orchestrator determines whether the user's question calls for a complete recommendation or only a specific data point, then directs the work to specialized agents—one that looks only at the market, one that looks only at sentiment, and one that combines both into a final recommendation with an explanation of the underlying logic. Each recommendation is recorded in a CSV file together with all the indicators that motivated it, making it possible to revisit and audit why the agent made a given decision.
 
-O sistema cobre 4 ações da B3: **PETR4 · VALE3 · BBAS3 · ITUB4**.
+The system covers 4 B3-listed stocks: **PETR4 · VALE3 · BBAS3 · ITUB4**.
 
-## Arquitetura
+## Architecture
 
-3 agentes especializados (`MarketAgent`, `SentimentAgent`, `DecisionAgent`) + um orquestrador em LangGraph com coordenação **híbrida**:
+3 specialized agents (`MarketAgent`, `SentimentAgent`, `DecisionAgent`) plus a LangGraph orchestrator with **hybrid** coordination:
 
-- **Pipeline fixo** (`pipeline_market → pipeline_sentiment → pipeline_decision`) para recomendação completa — as tools são chamadas diretamente em Python, sem passar pelo LLM, garantindo que a etapa nunca seja pulada ou a tool errada seja chamada. O LLM (`DecisionAgent`) só entra no fim para narrar o resultado já calculado.
-- **Roteamento dinâmico** (`market_node`, `sentiment_node`) para perguntas pontuais ("qual o RSI de VALE3?") — aqui o LLM decide de fato quais tools chamar, ReAct genuíno.
+- **Fixed pipeline** (`pipeline_market → pipeline_sentiment → pipeline_decision`) for complete recommendations—the tools are called directly in Python, without going through the LLM, ensuring that no step is ever skipped and that the wrong tool is not called. The LLM (`DecisionAgent`) is used only at the end to narrate the result that has already been calculated.
+- **Dynamic routing** (`market_node`, `sentiment_node`) for specific questions ("qual o RSI de VALE3?", meaning "what is VALE3's RSI?")—here, the LLM genuinely decides which tools to call, using a true ReAct approach.
 
-Diagrama completo (fluxo do agente + pipeline do backtest) em [`docs/architecture.md`](docs/architecture.md). Decisões e trade-offs detalhados em [`docs/decisions.md`](docs/decisions.md).
+See the complete diagram (agent flow + backtest pipeline) in [`docs/architecture.md`](docs/architecture.md). Detailed decisions and trade-offs are documented in [`docs/decisions.md`](docs/decisions.md).
 
-## Como rodar localmente
+## Running locally
 
-### Pré-requisitos
+### Prerequisites
+
 - Python 3.11+
-- Conta na [DeepInfra](https://deepinfra.com/) com chave de API (créditos gratuitos cobrem a demo)
-- *(Opcional — só para reproduzir o backtest com sentimento histórico real)* conta Google Cloud com BigQuery habilitado e `gcloud` CLI autenticado
+- A [DeepInfra](https://deepinfra.com/) account with an API key (free credits cover the demo)
+- *(Optional—only to reproduce the backtest with real historical sentiment)* a Google Cloud account with BigQuery enabled and the `gcloud` CLI authenticated
 
-### Instalação
+### Installation
 
 ```powershell
 git clone <url-do-repositorio>
@@ -36,97 +37,97 @@ python -m venv .venv
 pip install -e ".[dev]"
 ```
 
-### Configuração
+### Configuration
 
 ```powershell
 Copy-Item .env.example .env
-# edite .env e preencha DEEPINFRA_API_KEY
+# edit .env and fill in DEEPINFRA_API_KEY
 ```
 
-Para reproduzir o backtest com sentimento histórico real (opcional, não necessário para a interface principal):
+To reproduce the backtest with real historical sentiment (optional and not required for the main interface):
 
 ```powershell
 gcloud auth application-default login
 ```
 
-### Rodar a interface conversacional
+### Running the conversational interface
 
 ```powershell
 python src/quantumfinance/app/gradio_app.py
 ```
 
-Abre em `http://localhost:7860`. Exemplos de pergunta: "Qual a recomendação para PETR4 hoje?", "Compare os indicadores de VALE3 e PETR4", "Qual o sentimento das notícias sobre BBAS3?".
+The interface opens at `http://localhost:7860`. Example questions are kept in Portuguese because they represent the currently validated application input: "Qual a recomendação para PETR4 hoje?" ("What is today's recommendation for PETR4?"), "Compare os indicadores de VALE3 e PETR4" ("Compare the indicators for VALE3 and PETR4"), and "Qual o sentimento das notícias sobre BBAS3?" ("What is the sentiment of news about BBAS3?"). The English text in parentheses explains their meaning; it does not indicate that English conversational input has been validated.
 
-### Rodar os testes e checagens de qualidade
+### Running tests and quality checks
 
 ```powershell
-pytest tests/ -v       # 20 testes, funções críticas
-mypy src/               # tipos
+pytest tests/ -v       # 20 tests, critical functions
+mypy src/               # types
 ruff check src/         # lint
 ```
 
-### Reproduzir o backtest (opcional)
+### Reproducing the backtest (optional)
 
 ```powershell
 python scripts/run_backtest_gdelt.py
 ```
 
-## Resultados do backtest
+## Backtest results
 
-Simulação histórica nos últimos ~90 dias úteis, para os 4 tickers, comparando a recomendação do dia contra o retorno real dos 5 pregões seguintes e contra o Ibovespa no mesmo período. O backtest **não chama o LLM nem o FinBERT** — usa só a função determinística de decisão (`apply_decision_rules`), para isolar a qualidade do sinal técnico+sentimento da qualidade da narração em linguagem natural.
+Historical simulation over the last ~90 trading days for the 4 tickers, comparing each day's recommendation with the actual return over the next 5 trading sessions and with the Ibovespa over the same period. The backtest **does not call the LLM or FinBERT**—it uses only the deterministic decision function (`apply_decision_rules`) to isolate the quality of the technical+sentiment signal from the quality of the natural-language narrative.
 
-| Modo | Linhas | Accuracy direcional | Beat Ibovespa | Sentimento |
+| Mode | Rows | Directional accuracy | Beat Ibovespa | Sentiment |
 |---|---|---|---|---|
-| Placeholder (sentimento neutro fixo) | 229 | ~40% | ~52% | `sentiment_score=0.5` sempre |
-| GDELT/BigQuery (sentimento histórico real) | 243 | ~42% | ~53.8% | 100% real, 0% fallback |
+| Placeholder (fixed neutral sentiment) | 229 | ~40% | ~52% | `sentiment_score=0.5` always |
+| GDELT/BigQuery (real historical sentiment) | 243 | ~42% | ~53.8% | 100% real, 0% fallback |
 
-*(Os valores exatos variam um pouco entre execuções porque a janela do backtest é sempre "os últimos 90 dias" — rolante, não fixa. Os números acima são representativos do que o notebook `04_backtest_and_evaluation.ipynb` produz.)*
+*(Exact values vary slightly between runs because the backtest window is always "the last 90 days"—rolling rather than fixed. The numbers above are representative of what the `04_backtest_and_evaluation.ipynb` notebook produces.)*
 
-**Leitura honesta dos números:** accuracy de ~40-42% numa decisão de 3 classes (COMPRAR/VENDER/AGUARDAR, baseline aleatório ~33%) é acima do acaso, mas não é um sinal validado para uso real — é evidência de que a lógica é sã, não de que é lucrativa. Bater o Ibovespa em ~52-54% das vezes também está perto de um cara-ou-coroa. O ganho mais sólido do sentimento real (GDELT) sobre o placeholder neutro foi pequeno e concentrado em poucos dias específicos (ver notebook), porque a maior parte do tempo o sentimento de notícias fica numa faixa neutra que não muda a decisão (`apply_decision_rules` só deixa o sentimento influenciar quando o score passa de 0.6 ou cai abaixo de 0.4).
+**An honest reading of the numbers:** accuracy of ~40-42% on a 3-class decision (COMPRAR/VENDER/AGUARDAR, random baseline ~33%) is above chance, but this is not a validated signal for real-world use—it is evidence that the logic is sound, not that it is profitable. Beating the Ibovespa ~52-54% of the time is also close to a coin toss. The more concrete improvement from using real sentiment (GDELT) instead of the neutral placeholder was small and concentrated on a few specific days (see the notebook), because news sentiment remains in a neutral range most of the time and does not change the decision (`apply_decision_rules` allows sentiment to have an effect only when the score rises above 0.6 or falls below 0.4).
 
-Detalhes completos, gráficos e a comparação lado a lado dos dois modos: [`notebooks/04_backtest_and_evaluation.ipynb`](notebooks/04_backtest_and_evaluation.ipynb).
+For full details, charts, and a side-by-side comparison of the two modes, see [`notebooks/04_backtest_and_evaluation.ipynb`](notebooks/04_backtest_and_evaluation.ipynb).
 
-## Decisões arquiteturais principais
+## Key architectural decisions
 
-- **Pipeline determinístico no fluxo de recomendação** — encadear 3 agentes ReAct passando a conversa acumulada não funcionava de forma confiável (o LLM via a conversa "já parecendo respondida" e não chamava a tool). A solução foi chamar as tools direto em Python no caminho principal, com o LLM entrando só para narrar.
-- **Sentimento histórico via Google BigQuery** — o cliente GDELT original via API REST tinha rate limiting severo (~30min para 3 semanas de dados). Substituído por BigQuery, que acessa o mesmo dataset público do GDELT sem esse limite, terminando o backtest completo em minutos em vez de horas.
-- **FinBERT-PT-BR para sentimento** — modelo especializado em sentimento financeiro em português, usado só para inferência (sem fine-tuning), no caminho em tempo real do agente.
+- **Deterministic pipeline in the recommendation flow**—chaining 3 ReAct agents while passing the accumulated conversation did not work reliably (the LLM saw a conversation that "already looked answered" and did not call the tool). The solution was to call the tools directly in Python on the main path, with the LLM used only for narration.
+- **Historical sentiment through Google BigQuery**—the original GDELT client using the REST API had severe rate limiting (~30min for 3 weeks of data). It was replaced with BigQuery, which accesses the same public GDELT dataset without that limitation and completes the full backtest in minutes instead of hours.
+- **FinBERT-PT-BR for sentiment**—a model specialized in Portuguese financial sentiment, used only for inference (without fine-tuning) in the agent's real-time path.
 
-Rationale completo de cada decisão, incluindo os trade-offs aceitos: [`docs/decisions.md`](docs/decisions.md).
+The full rationale for each decision, including the accepted trade-offs, is available in [`docs/decisions.md`](docs/decisions.md).
 
-## Limitações honestas
+## Known limitations
 
-- **Sentimento em tempo real depende de RSS, que é volátil por natureza.** A cobertura de notícias para um ticker específico, num dado momento, depende do que os feeds têm publicado nas últimas horas — pode não ter nada relevante, e o sistema cai no fallback neutro (`sentiment_score=0.5`) sem aviso explícito ao usuário.
-- **Sentimento histórico do backtest (GDELT) é um score geral de mídia, não financeiro especializado** — diferente do FinBERT-PT-BR usado no agente em tempo real. É uma proxy razoável para o backtest, não o mesmo sinal usado em produção.
-- **Latência sequencial no backtest com BigQuery** — uma query por combinação ticker/dia (243 chamadas para 90 dias × 4 tickers, ~25min). Funciona bem no volume atual, mas não é a forma mais eficiente; batch queries reduziriam isso a poucas chamadas (ver Próximos passos).
-- **Matching de keywords é por substring exato, não semântico** — uma manchete pode "casar" com um ticker por uma palavra genérica (ex: "juros", "Selic") sem ser realmente sobre aquela empresa. A manchete completa fica visível para auditoria, mas o filtro em si não distingue relevância genuína de coincidência de termo.
-- **Pipeline fixo é menos "agêntico" no sentido puro** — o caminho principal de recomendação não deixa o LLM decidir a sequência de tools; isso é uma troca deliberada por confiabilidade, não uma limitação técnica não-percebida (ver decisão acima).
-- **Accuracy do backtest é uma prova de conceito, não um sinal validado** — ver "Resultados do backtest" acima.
-- **Dependência de serviços externos** — DeepInfra (LLM), Yahoo Finance, feeds RSS e BigQuery precisam estar disponíveis; o sistema tem fallbacks (sentimento neutro, mensagens de erro amigáveis no Gradio) mas não funciona totalmente offline.
+- **Real-time sentiment depends on RSS, which is volatile by nature.** News coverage for a specific ticker at a given time depends on what the feeds have published in recent hours—there may be nothing relevant, in which case the system falls back to neutral (`sentiment_score=0.5`) without explicitly notifying the user.
+- **Historical backtest sentiment (GDELT) is a general media score, not a specialized financial score**—unlike the FinBERT-PT-BR model used by the real-time agent. It is a reasonable proxy for the backtest, not the same signal used in production.
+- **Sequential latency in the BigQuery backtest**—one query per ticker/day combination (243 calls for 90 days × 4 tickers, ~25min). It works well at the current volume, but it is not the most efficient approach; batch queries would reduce this to a few calls (see Next steps).
+- **Keyword matching uses exact substrings rather than semantic matching**—a headline may match a ticker through a generic word (for example, "juros" or "Selic") without actually being about that company. The full headline remains visible for auditing, but the filter itself cannot distinguish genuine relevance from a coincidental term match.
+- **The fixed pipeline is less "agentic" in the strict sense**—the main recommendation path does not let the LLM decide the tool sequence; this is a deliberate trade-off for reliability, not an overlooked technical limitation (see the decision above).
+- **Backtest accuracy is a proof of concept, not a validated signal**—see "Backtest results" above.
+- **Dependence on external services**—DeepInfra (LLM), Yahoo Finance, RSS feeds, and BigQuery must be available; the system has fallbacks (neutral sentiment and user-friendly error messages in Gradio), but it does not work entirely offline.
 
-## Próximos passos
+## Next steps
 
-- **Batch queries no BigQuery e download bulk no yfinance** — substituir as centenas de chamadas sequenciais do backtest por uma única query agregada (`GROUP BY ticker, date`) e um único `yf.download` por ticker, eliminando a maior parte dos round-trips de rede.
-- **Integração com dados da CVM** — fundamentos e divulgações regulatórias das empresas monitoradas, complementando o sentimento de notícias com dados estruturados oficiais.
-- **Integração com o Boletim Focus do Banco Central** — expectativas de mercado para Selic, inflação e câmbio como contexto macroeconômico adicional na decisão.
-- **Context Router Agent** — agente que decide dinamicamente quais esferas temáticas (política, ambiental, regulatória) são relevantes para cada ticker antes de buscar sentimento, em vez do conjunto fixo de keywords atual.
+- **Batch queries in BigQuery and bulk downloads in yfinance**—replace the hundreds of sequential backtest calls with a single aggregate query (`GROUP BY ticker, date`) and a single `yf.download` per ticker, eliminating most network round trips.
+- **Integration with CVM data**—fundamentals and regulatory disclosures for the monitored companies, supplementing news sentiment with official structured data.
+- **Integration with the Brazilian Central Bank's Focus Report**—market expectations for the Selic rate, inflation, and exchange rates as additional macroeconomic context for the decision.
+- **Context Router Agent**—an agent that dynamically decides which thematic areas (political, environmental, regulatory) are relevant to each ticker before retrieving sentiment, instead of using the current fixed set of keywords.
 
 ## Stack
 
 Python 3.11+ · LangGraph · DeepInfra (Qwen3-235B-A22B-Instruct) · FinBERT-PT-BR · yfinance · feedparser · pandas-ta · Google BigQuery · Gradio · pytest/ruff/mypy
 
-## Estrutura do projeto
+## Project structure
 
 ```
 src/quantumfinance/
-├── data/          # coleta de preços, notícias e sentimento histórico (GDELT/BigQuery)
-├── features/      # indicadores técnicos, sentimento, targets do backtest
-├── agents/        # MarketAgent, SentimentAgent, DecisionAgent, orquestrador
-├── tools/         # tools registradas nos agentes
-├── output/        # persistência das recomendações
-├── backtesting/   # simulação histórica e métricas
-└── app/           # interface Gradio
-tests/             # pytest das funções críticas
-notebooks/         # validação visual e demo end-to-end
-docs/              # decisões, progresso, padrões de código, arquitetura
+├── data/          # price, news, and historical sentiment collection (GDELT/BigQuery)
+├── features/      # technical indicators, sentiment, backtest targets
+├── agents/        # MarketAgent, SentimentAgent, DecisionAgent, orchestrator
+├── tools/         # tools registered with the agents
+├── output/        # recommendation persistence
+├── backtesting/   # historical simulation and metrics
+└── app/           # Gradio interface
+tests/             # pytest for critical functions
+notebooks/         # visual validation and end-to-end demo
+docs/              # decisions, progress, coding standards, architecture
 ```
