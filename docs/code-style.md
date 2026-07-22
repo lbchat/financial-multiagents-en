@@ -1,14 +1,14 @@
-# Estilo de Código
+# Code Style
 
-- Funções fazem uma coisa. Se precisar de "e" para descrever, divida em duas.
-- Nomes de variáveis descrevem o que contêm. Nomes de funções descrevem o que fazem.
-- Sem abreviações. `get_market_features` não `get_mkt_feat`.
-- Sem código comentado. Delete. O Git lembra.
-- Trate erros explicitamente. Nunca `except: pass` ou exception silenciosa.
-- Arquivos com mais de 300 linhas devem ser divididos em módulos.
-- Type hints em todas as assinaturas de função.
-- Docstrings em funções públicas — uma linha em português descrevendo o que a função faz.
-- Imports em três grupos separados por linha em branco: stdlib → externos → internos.
+- Functions do one thing. If you need "and" to describe one, split it into two.
+- Variable names describe what they contain. Function names describe what they do.
+- No abbreviations. `get_market_features`, not `get_mkt_feat`.
+- No commented-out code. Delete it. Git remembers.
+- Handle errors explicitly. Never use `except: pass` or silently ignore an exception.
+- Files with more than 300 lines must be split into modules.
+- Type hints in every function signature.
+- Docstrings in public functions—one line in Portuguese describing what the function does.
+- Imports in three groups separated by a blank line: stdlib → external → internal.
 
-## Testes
-- Todo teste deve exercitar o mesmo caminho de código que o uso real vai exercitar — não apenas validar o objeto isolado em memória. Testar a construção de um objeto não substitui testar sua serialização, persistência ou qualquer transformação que o código de produção realmente aplica antes de usá-lo.
+## Tests
+- Every test must exercise the same code path that actual usage will exercise—not merely validate an isolated object in memory. Testing the construction of an object does not replace testing its serialization, persistence, or any transformation that production code actually applies before using it.
