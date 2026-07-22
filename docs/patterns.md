@@ -4,6 +4,8 @@
 
 Every tool is a pure Python function. No side effects and no calls to other agents.
 
+Language policy for these examples: Portuguese `@tool` docstrings, agent prompts, runtime exceptions, and machine values are intentional because the application runtime is Brazilian Portuguese only. Ordinary developer-facing docstrings must be written in English. All fenced examples remain unchanged in this policy-only phase, including obsolete or non-runtime Portuguese content.
+
 ```python
 # src/quantumfinance/tools/market_tools.py
 from langchain_core.tools import tool

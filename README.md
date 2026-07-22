@@ -10,6 +10,10 @@ The solution here is a **multi-agent system**: an orchestrator determines whethe
 
 The system covers 4 B3-listed stocks: **PETR4 · VALE3 · BBAS3 · ITUB4**.
 
+## Language policy
+
+Repository documentation is written in English for international readability. The working application intentionally operates only in Brazilian Portuguese: user questions, agent answers and recommendation explanations, Gradio interface text, prompts, runtime messages, demo interactions, and financial-language processing remain in PT-BR. This aligns the runtime with Brazilian Portuguese financial-news sources and FinBERT-PT-BR. English conversational input and output are not claimed as supported or validated.
+
 ## Architecture
 
 3 specialized agents (`MarketAgent`, `SentimentAgent`, `DecisionAgent`) plus a LangGraph orchestrator with **hybrid** coordination:
@@ -56,7 +60,7 @@ gcloud auth application-default login
 python src/quantumfinance/app/gradio_app.py
 ```
 
-The interface opens at `http://localhost:7860`. Example questions are kept in Portuguese because they represent the currently validated application input: "Qual a recomendação para PETR4 hoje?" ("What is today's recommendation for PETR4?"), "Compare os indicadores de VALE3 e PETR4" ("Compare the indicators for VALE3 and PETR4"), and "Qual o sentimento das notícias sobre BBAS3?" ("What is the sentiment of news about BBAS3?"). The English text in parentheses explains their meaning; it does not indicate that English conversational input has been validated.
+The interface opens at `http://localhost:7860`. Because the application runtime is intentionally Brazilian Portuguese only, the example questions remain in Portuguese: "Qual a recomendação para PETR4 hoje?" ("What is today's recommendation for PETR4?"), "Compare os indicadores de VALE3 e PETR4" ("Compare the indicators for VALE3 and PETR4"), and "Qual o sentimento das notícias sobre BBAS3?" ("What is the sentiment of news about BBAS3?"). The English text in parentheses explains their meaning only; it is not claimed as supported or validated conversational input.
 
 ### Running tests and quality checks
 

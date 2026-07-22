@@ -13,6 +13,14 @@ Multi-agent system for recommending Brazilian stocks (COMPRAR / VENDER / AGUARDA
 ## Environment
 - Windows 11, PowerShell—use PowerShell commands, not bash
 
+## Language policy
+- English is the repository's engineering and documentation language and should be used for repository, architecture, planning, and development documentation; source-code comments; test comments and explanatory documentation; notebook Markdown and developer comments; ordinary developer-facing docstrings; and other non-runtime annotations.
+- Brazilian Portuguese must remain the language of user questions; agent answers and recommendation explanations; Gradio interface text and example questions; runtime warnings, errors, status, and progress messages; agent, router, and recommendation-narration prompts; LLM-visible tool descriptions and `@tool` docstrings; manual agent-test prompts and demo interactions; financial-news keywords and aliases; FinBERT inputs and label mappings; contextual keyword maps; and future persisted recommendation reasoning.
+- Never claim that English runtime input or output is supported or validated.
+- Ordinary developer-facing docstrings must be written in English. Docstrings exposed to LangChain or an LLM, or reused as runtime help, prompt content, tool-selection guidance, or user-visible text, must remain in Brazilian Portuguese.
+- When uncertain whether a docstring is LLM-visible or runtime-visible, preserve it in Portuguese and flag it for review.
+- Preserve `COMPRAR`, `VENDER`, `AGUARDAR`, `POSITIVO`, `NEGATIVO`, and `NEUTRO`, as well as routing labels, schema keys, CSV fields, dictionary keys, DataFrame columns, persisted values, Portuguese keyword lists, model mappings, identifiers, filenames, and paths.
+
 ## Structure
 - `src/quantumfinance/data/`—price and news collection
 - `src/quantumfinance/features/`—technical indicators and sentiment
