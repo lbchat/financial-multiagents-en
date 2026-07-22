@@ -1,207 +1,207 @@
-# Plano de Execução — QuantumFinance AI Agent
+# Execution Plan — QuantumFinance AI Agent
 
 ---
 
-## Parte 1 — Plano de Execução por Etapas
+## Part 1 — Stage-by-Stage Execution Plan
 
-### Etapa 0 — Fundação do projeto
+### Stage 0 — Project foundation
 
-Antes de escrever qualquer linha de código do agente, deixe a base pronta. Isso parece óbvio mas é onde a maioria dos projetos acadêmicos começa torto.
+Before writing a single line of agent code, prepare the foundation. This may seem obvious, but it is where most academic projects start going off track.
 
-- Criar o repositório no GitHub (público, com README inicial mesmo que mínimo)
-- Configurar ambiente Python com `pyproject.toml` ou `requirements.txt` enxuto — só o que você sabe que vai usar
-- Criar `.env.example` com as variáveis necessárias: `DEEPINFRA_API_KEY`
-- Definir a estrutura de pastas mínima, sem criar pastas vazias "para o futuro"
-- Colocar `CLAUDE.md` na raiz e a pasta `docs/` com os quatro arquivos de contexto
-- **Validar o LLM antes de qualquer código de agente:** fazer uma chamada simples ao Qwen 2.5 7B via DeepInfra, com uma pergunta que exige tool calling, e confirmar que o formato de resposta é compatível com LangGraph. Se houver inconsistência, trocar para Llama 3.1 8B — muda apenas uma linha em `config.py`.
+- Create the repository on GitHub (public, with an initial README even if minimal)
+- Configure a lean Python environment with `pyproject.toml` or `requirements.txt`—only what you know you will use
+- Create `.env.example` with the required variables: `DEEPINFRA_API_KEY`
+- Define the minimum folder structure without creating empty folders "for the future"
+- Place `CLAUDE.md` at the root and create the `docs/` folder with the four context files
+- **Validate the LLM before writing any agent code:** make a simple call to Qwen 2.5 7B through DeepInfra with a question that requires tool calling, and confirm that the response format is compatible with LangGraph. If it is inconsistent, switch to Llama 3.1 8B—this changes only one line in `config.py`.
 
-**Critério de saída:** `python -c "import quantumfinance"` funciona, o repo está no GitHub, o README explica em 3 parágrafos o que o projeto faz, e uma chamada de teste ao Qwen 2.5 7B via DeepInfra retornou uma tool call bem formatada.
-
----
-
-### Etapa 1 — Pipeline de dados de mercado
-
-O objetivo é ter uma função que recebe um ticker e retorna preços + indicadores técnicos prontos para uso. Sem agente ainda, sem LLM, sem nada de IA.
-
-- Implementar coleta via `yfinance` para um ticker, retornando OHLCV
-- Calcular os indicadores que a disciplina pede: RSI, MACD, SMA, EMA, Bandas de Bollinger, Volume
-- Usar `pandas-ta` — nunca TA-Lib (dependência nativa problemática em Windows)
-- Validar visualmente em notebook: plotar preço + indicadores e conferir se faz sentido
-
-**Critério de saída:** uma função `get_market_features("PETR4")` que devolve um dicionário com preço atual e indicadores calculados, e um notebook com os gráficos validados.
+**Exit criterion:** `python -c "import quantumfinance"` works, the repository is on GitHub, the README explains what the project does in 3 paragraphs, and a test call to Qwen 2.5 7B through DeepInfra returned a well-formatted tool call.
 
 ---
 
-### Etapa 2 — Pipeline de notícias e sentimento
+### Stage 1 — Market-data pipeline
 
-Coleta de notícias e classificação de sentimento com FinBERT-PT-BR.
+The objective is to have a function that receives a ticker and returns prices + technical indicators ready for use. No agent yet, no LLM, and no AI of any kind.
 
-- Coleta via `feedparser` de RSS feeds (InfoMoney, Valor Econômico, Reuters, B3)
-- Filtro por keywords ligadas ao ticker (Petrobras, PETR4, petróleo, combustíveis…)
-- Carregamento do modelo FinBERT-PT-BR via HuggingFace `transformers` — apenas inferência, sem fine-tuning
-- Classificação de sentimento de cada notícia (POSITIVO / NEGATIVO / NEUTRO + score de confiança)
-- Agregação: score médio de sentimento e contagem das últimas N notícias
+- Implement collection through `yfinance` for one ticker, returning OHLCV
+- Calculate the indicators required by the course: RSI, MACD, SMA, EMA, Bollinger Bands, Volume
+- Use `pandas-ta`—never TA-Lib (a problematic native dependency on Windows)
+- Validate visually in a notebook: plot price + indicators and check whether they make sense
 
-**Critério de saída:** uma função `get_sentiment_features("PETR4")` que devolve um dicionário com sentimento médio recente, número de notícias analisadas, e as 3 manchetes mais relevantes com seus scores.
-
----
-
-### Etapa 3 — Construção do agente MVP
-
-Com as funções das etapas 1 e 2 funcionando, transformá-las em tools e montar o agente é direto.
-
-- Criar 3 tools: `get_market_features`, `get_sentiment_features`, `generate_recommendation`
-- Implementar o grafo LangGraph com os 3 agentes especializados + orquestrador
-- Orquestrador com padrão híbrido: pipeline fixo (Market → Sentiment → Decision) para recomendação completa, roteamento dinâmico para perguntas pontuais
-- Definir o prompt de sistema de cada agente com responsabilidade única e explícita
-- Implementar memória de sessão básica para conversas multi-turno
-- Garantir que o raciocínio (Chain-of-Thought) seja registrado de forma estruturada
-- Saída do DecisionAgent: JSON estruturado validado contra o enum `Recommendation(COMPRAR, VENDER, AGUARDAR)`
-
-**Critério de saída:** você pergunta no terminal "qual a recomendação para PETR4 hoje?" e o agente responde com COMPRAR/VENDER/AGUARDAR + justificativa baseada em dados reais coletados naquele momento.
+**Exit criterion:** a `get_market_features("PETR4")` function that returns a dictionary with the current price and calculated indicators, plus a notebook containing the validated charts.
 
 ---
 
-### Etapa 4 — Expansão para os 4 tickers
+### Stage 2 — News and sentiment pipeline
 
-Com o agente funcionando para PETR4, generalizar é simples. O cuidado é não introduzir bugs na expansão.
+News collection and sentiment classification with FinBERT-PT-BR.
 
-- Parametrizar todas as funções para qualquer ticker
-- Testar caso a caso — VALE3 tem dinâmica diferente de BBAS3, e isso pode revelar bugs
-- Garantir que `TICKERS = ["PETR4", "VALE3", "BBAS3", "ITUB4"]` em `config.py` seja a única fonte de verdade
-- Validar que o agente lida bem com perguntas comparativas ("compare VALE3 e PETR4 hoje")
+- Collect RSS feeds through `feedparser` (InfoMoney, Valor Econômico, Reuters, B3)
+- Filter by keywords associated with the ticker (Petrobras, PETR4, petróleo, combustíveis…)
+- Load the FinBERT-PT-BR model through HuggingFace `transformers`—inference only, without fine-tuning
+- Classify the sentiment of each article (POSITIVO / NEGATIVO / NEUTRO + confidence score)
+- Aggregate: average sentiment score and count of the latest N articles
 
-**Critério de saída:** o agente responde corretamente para os 4 tickers e mantém qualidade nas justificativas em todos eles.
-
----
-
-### Etapa 5 — Interface conversacional (Gradio)
-
-Coloque uma cara no projeto. Gradio transforma o agente em algo demonstrável e gravável.
-
-- Interface mínima: campo de pergunta + área de resposta + histórico de conversa
-- Mostrar o raciocínio do agente em seção colapsável (transparência do CoT)
-- Botões de exemplo pré-definidos: "Recomendação para PETR4", "Compare VALE3 e BBAS3", "Qual o sentimento atual de ITUB4?"
-
-**Critério de saída:** demo navegável no browser, gravável em vídeo curto para portfólio.
+**Exit criterion:** a `get_sentiment_features("PETR4")` function that returns a dictionary containing recent average sentiment, the number of articles analyzed, and the 3 most relevant headlines with their scores.
 
 ---
 
-### Etapa 6 — Backtest e registro de recomendações
+### Stage 3 — Building the MVP agent
 
-Aqui o projeto passa de "agente funcional" para "agente avaliável". É o que mais impressiona na avaliação acadêmica e em portfólio.
+Once the functions from stages 1 and 2 are working, turning them into tools and assembling the agent is straightforward.
 
-- Implementar simulação histórica: rodar o agente com dados de cada dia útil dos últimos 6-12 meses
-- Para cada dia, registrar em `data/recommendations.csv`: data, ticker, recomendação, confiança, indicadores, sentimento, raciocínio
-- Comparar performance vs. buy-and-hold e vs. Ibovespa
-- Calcular métricas: acurácia direcional, retorno acumulado, Sharpe ratio simplificado
+- Create 3 tools: `get_market_features`, `get_sentiment_features`, `generate_recommendation`
+- Implement the LangGraph graph with the 3 specialized agents + orchestrator
+- Use a hybrid orchestrator pattern: fixed pipeline (Market → Sentiment → Decision) for complete recommendations and dynamic routing for specific questions
+- Define each agent's system prompt with a single, explicit responsibility
+- Implement basic session memory for multi-turn conversations
+- Ensure that the reasoning (Chain-of-Thought) is recorded in a structured format
+- DecisionAgent output: structured JSON validated against the `Recommendation(COMPRAR, VENDER, AGUARDAR)` enum
 
-**Critério de saída:** notebook de backtest com gráficos comparativos e tabela de métricas.
-
----
-
-### Etapa 7 — Documentação final e entrega
-
-A documentação é onde projetos bons viram excelentes para portfólio.
-
-- README completo: o problema, a solução, arquitetura, como rodar, limitações, próximos passos
-- Notebook de demonstração que orquestra tudo do início ao fim
-- Vídeo curto (2-3 min) mostrando o agente funcionando
-- Diagrama da arquitetura em Mermaid ou Excalidraw
-- Lista honesta de limitações — mostra maturidade técnica
-
-**Critério de saída:** alguém que abre o repo entende o projeto em 5 minutos e consegue rodar localmente em 15.
+**Exit criterion:** you ask in the terminal using the Portuguese input "qual a recomendação para PETR4 hoje?" (meaning "what is today's recommendation for the stock?") and the agent responds with COMPRAR/VENDER/AGUARDAR + a rationale based on real data collected at that moment.
 
 ---
 
-## Parte 2 — Banco de Ideias Bônus
+### Stage 4 — Expansion to the 4 tickers
 
-Implementar apenas após a Etapa 5 concluída, em ordem de prioridade para portfólio.
+Once the agent is working for PETR4, generalizing it is straightforward. The challenge is to avoid introducing bugs during the expansion.
+
+- Parameterize every function for any ticker
+- Test each case individually—VALE3 behaves differently from BBAS3, which may reveal bugs
+- Ensure that `TICKERS = ["PETR4", "VALE3", "BBAS3", "ITUB4"]` in `config.py` is the single source of truth
+- Validate that the agent handles comparative questions well using the Portuguese input "compare VALE3 e PETR4 hoje" (meaning "compare the two stocks today")
+
+**Exit criterion:** the agent responds correctly for all 4 tickers and maintains the quality of its rationales across all of them.
+
+---
+
+### Stage 5 — Conversational interface (Gradio)
+
+Give the project a face. Gradio turns the agent into something demonstrable and suitable for recording.
+
+- Minimum interface: question field + response area + conversation history
+- Show the agent's reasoning in a collapsible section (CoT transparency)
+- Predefined example buttons using the Portuguese inputs: "Recomendação para PETR4" (meaning "Recommendation for the stock"), "Compare VALE3 e BBAS3" (meaning "Compare the two stocks"), "Qual o sentimento atual de ITUB4?" (meaning "What is the stock's current sentiment?")
+
+**Exit criterion:** a navigable browser demo that can be recorded in a short portfolio video.
+
+---
+
+### Stage 6 — Backtest and recommendation logging
+
+This is where the project moves from a "functional agent" to an "evaluable agent." It is what makes the strongest impression in both academic evaluation and a portfolio.
+
+- Implement historical simulation: run the agent with data from every trading day over the last 6-12 months
+- For each day, record the planned fields in `data/recommendations.csv`: data, ticker, recomendação, confiança, indicadores, sentimento, raciocínio (date, ticker, recommendation, confidence, indicators, sentiment, reasoning)
+- Compare performance against buy-and-hold and the Ibovespa
+- Calculate metrics: directional accuracy, cumulative return, simplified Sharpe ratio
+
+**Exit criterion:** a backtest notebook with comparative charts and a metrics table.
+
+---
+
+### Stage 7 — Final documentation and delivery
+
+Documentation is where good projects become excellent portfolio projects.
+
+- Complete README: the problem, the solution, architecture, how to run it, limitations, next steps
+- Demonstration notebook that orchestrates everything from beginning to end
+- Short video (2-3 min) showing the agent in operation
+- Architecture diagram in Mermaid or Excalidraw
+- Honest list of limitations—demonstrates technical maturity
+
+**Exit criterion:** someone opening the repository can understand the project in 5 minutes and run it locally in 15.
+
+---
+
+## Part 2 — Bonus Idea Bank
+
+Implement only after Stage 5 has been completed, in order of portfolio priority.
 
 ### 🥇 1. Asset Context Map + Context Router Agent
 
-**O que é:** sistema de mapeamento contextual por ativo com esferas temáticas (política, ambiental, social, regulatória) e um agente roteador que dirige buscas de notícia para as fontes e keywords certas por esfera.
+**What it is:** an asset-specific contextual mapping system with thematic areas (political, environmental, social, regulatory) and a routing agent that directs news searches to the appropriate sources and keywords for each area.
 
-**Quando incorporar:** após Etapa 5, antes do backtest. Implementar para PETR4 primeiro.
+**When to incorporate it:** after Stage 5 and before the backtest. Implement it for PETR4 first.
 
-**Por que vale para portfólio:** é a ideia mais original do planejamento. Quase ninguém vai pensar nisso. Em entrevista técnica vira história: *"percebi que sentimento genérico perdia o contexto setorial, então construí um sistema de roteamento contextual..."*. Mostra pensamento de produto e arquitetura, não só execução.
-
----
-
-### 🥈 2. Backtest comparativo robusto
-
-**O que é:** aprofundamento do backtest da Etapa 6 com walk-forward validation, análise por regime de mercado (bull vs. bear) e drawdown máximo.
-
-**Quando incorporar:** após Etapa 6, como extensão natural.
-
-**Por que vale para portfólio:** rigor quantitativo é raro em projetos de agentes. A maioria para no "o agente funciona". Quem valida com seriedade se destaca.
+**Why it is valuable for a portfolio:** it is the most original idea in the plan. Almost no one will think of it. It becomes a useful story in a technical interview: *"I realized that generic sentiment was losing sector-specific context, so I built a contextual routing system..."*. It demonstrates product and architecture thinking, not just execution.
 
 ---
 
-### 🥉 3. Análise por esferas contextuais
+### 🥈 2. Robust comparative backtest
 
-**O que é:** camada de sentimento contextual além do financeiro direto — política, ambiental, social, regulatória. Implementação natural após o Context Router existir.
+**What it is:** a deeper version of the Stage 6 backtest with walk-forward validation, analysis by market regime (bull vs. bear), and maximum drawdown.
 
-**Quando incorporar:** logo após o Asset Context Map. Começar com 2 esferas por ticker, não 9.
+**When to incorporate it:** after Stage 6, as a natural extension.
 
-**Por que vale para portfólio:** completa a tese intelectual do projeto e gera material rico para discussão em entrevista — envolve trade-offs claros de precisão vs. cobertura e ruído vs. sinal.
-
----
-
-### 4. Memória de longo prazo do agente
-
-**O que é:** o agente lembra recomendações anteriores e eventos passados relevantes, injetando esse contexto em chamadas futuras via arquivo JSON ou SQLite.
-
-**Quando incorporar:** após Etapa 4.
-
-**Por que vale para portfólio:** memória é um dos tópicos mais discutidos em sistemas de agentes hoje. Mostra entendimento do ciclo de vida de um agente em produção.
+**Why it is valuable for a portfolio:** quantitative rigor is rare in agent projects. Most stop at "the agent works." Those who validate seriously stand out.
 
 ---
 
-### 5. Modelo supervisionado sobre recomendações históricas
+### 🥉 3. Analysis by contextual areas
 
-**O que é:** após o backtest gerar centenas de recomendações com features e resultados reais, treinar um modelo simples (Random Forest ou Logistic Regression) para aprender quais combinações de features predizem boas recomendações.
+**What it is:** a contextual sentiment layer beyond direct financial sentiment—political, environmental, social, and regulatory. A natural implementation once the Context Router exists.
 
-**Quando incorporar:** após Etapa 6, como camada de calibração do DecisionAgent.
+**When to incorporate it:** immediately after the Asset Context Map. Start with 2 areas per ticker, not 9.
 
-**Por que vale para portfólio:** demonstra integração entre agentes e ML clássico — combinação rara e valorizada. Fecha o loop intelectual do planejamento original de forma sólida.
-
----
-
-### 6. Alertas automáticos (Telegram)
-
-**O que é:** o agente roda diariamente via GitHub Actions e envia recomendações por mensagem no Telegram.
-
-**Quando incorporar:** após a entrega acadêmica, como extensão de portfólio.
-
-**Por que vale para portfólio:** transforma o projeto acadêmico em produto real e demonstrável. *"Ele me manda mensagens todo dia"* é uma frase poderosa em entrevista.
+**Why it is valuable for a portfolio:** it completes the project's intellectual thesis and provides rich material for interview discussions—it involves clear trade-offs between precision vs. coverage and noise vs. signal.
 
 ---
 
-### 7. Persistência em nuvem (Azure Blob Storage)
+### 4. Long-term agent memory
 
-**O que é:** salvar CSVs de recomendações, gráficos e logs no Azure usando os créditos disponíveis.
+**What it is:** the agent remembers previous recommendations and relevant past events, injecting that context into future calls through a JSON file or SQLite.
 
-**Quando incorporar:** após Etapa 6.
+**When to incorporate it:** after Stage 4.
 
-**Por que vale para portfólio:** adiciona Azure ao escopo do projeto, útil em filtros de RH. Implementação simples com retorno visível no repositório.
-
----
-
-### 8. Comparador de carteiras por perfil de risco
-
-**O que é:** o agente recebe um perfil (conservador, moderado, agressivo) e monta uma sugestão de alocação entre os 4 tickers.
-
-**Quando incorporar:** apenas se sobrar tempo após todas as etapas anteriores.
-
-**Por que vale para portfólio:** mostra visão de produto e UX. Mais relevante para papéis de aplicação de IA do que pesquisa.
+**Why it is valuable for a portfolio:** memory is one of the most widely discussed topics in agent systems today. It demonstrates an understanding of the lifecycle of an agent in production.
 
 ---
 
-### 9. Deep Learning experimental (LSTM / Transformer temporal)
+### 5. Supervised model using historical recommendations
 
-**O que é:** modelo de série temporal para prever direção do preço.
+**What it is:** after the backtest generates hundreds of recommendations with features and actual outcomes, train a simple model (Random Forest or Logistic Regression) to learn which combinations of features predict good recommendations.
 
-**Quando incorporar:** deixar para um projeto futuro, fora do escopo desta entrega.
+**When to incorporate it:** after Stage 6, as a calibration layer for DecisionAgent.
 
-**Por que está listado mesmo assim:** estava no planejamento original. A recomendação concreta é não incluir — com 4 ativos, o risco de overfitting é alto e a explicabilidade cai, o que penaliza na avaliação acadêmica.
+**Why it is valuable for a portfolio:** it demonstrates integration between agents and classical ML—a rare and valued combination. It closes the intellectual loop of the original plan in a solid way.
+
+---
+
+### 6. Automated alerts (Telegram)
+
+**What it is:** the agent runs daily through GitHub Actions and sends recommendations by Telegram message.
+
+**When to incorporate it:** after the academic delivery, as a portfolio extension.
+
+**Why it is valuable for a portfolio:** it turns the academic project into a real, demonstrable product. *"It sends me messages every day"* is a powerful statement in an interview.
+
+---
+
+### 7. Cloud persistence (Azure Blob Storage)
+
+**What it is:** save recommendation CSVs, charts, and logs in Azure using the available credits.
+
+**When to incorporate it:** after Stage 6.
+
+**Why it is valuable for a portfolio:** it adds Azure to the project's scope, which is useful for HR screening. A simple implementation with a visible result in the repository.
+
+---
+
+### 8. Portfolio comparison by risk profile
+
+**What it is:** the agent receives a profile (conservador, moderado, agressivo—meaning conservative, moderate, aggressive) and creates a suggested allocation among the 4 tickers.
+
+**When to incorporate it:** only if time remains after all previous stages.
+
+**Why it is valuable for a portfolio:** it demonstrates product and UX thinking. More relevant to applied AI roles than research roles.
+
+---
+
+### 9. Experimental Deep Learning (LSTM / temporal Transformer)
+
+**What it is:** a time-series model for predicting price direction.
+
+**When to incorporate it:** leave it for a future project, outside the scope of this delivery.
+
+**Why it is listed anyway:** it was part of the original plan. The concrete recommendation is not to include it—with 4 assets, the risk of overfitting is high and explainability decreases, which would hurt the academic evaluation.
