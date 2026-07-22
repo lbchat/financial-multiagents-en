@@ -1,8 +1,8 @@
-# Padrões de Código
+# Code Patterns
 
-## Tool padrão
+## Standard tool
 
-Toda tool é uma função Python pura. Sem efeitos colaterais, sem chamadas a outros agentes.
+Every tool is a pure Python function. No side effects and no calls to other agents.
 
 ```python
 # src/quantumfinance/tools/market_tools.py
@@ -17,13 +17,13 @@ def get_market_features(ticker: str) -> dict:
     return calculate_indicators(data)
 ```
 
-Regras:
-- Decorator `@tool` do LangChain
-- Type hints em todos os parâmetros e no retorno
-- Docstring de uma linha em português — o LLM usa isso para decidir quando chamar a tool
-- Exceções tratadas explicitamente dentro da função, nunca silenciadas
+Rules:
+- LangChain `@tool` decorator
+- Type hints on all parameters and on the return value
+- One-line docstring in Portuguese—the LLM uses it to decide when to call the tool
+- Exceptions handled explicitly within the function, never silenced
 
-## Tratamento de erro em funções que chamam APIs externas
+## Error handling in functions that call external APIs
 
 ```python
 def fetch_ohlcv(ticker: str, period: str = "3mo") -> pd.DataFrame:
@@ -37,7 +37,7 @@ def fetch_ohlcv(ticker: str, period: str = "3mo") -> pd.DataFrame:
         raise RuntimeError(f"Erro ao buscar dados para {ticker}: {e}") from e
 ```
 
-## Configuração do LLM via DeepInfra
+## LLM configuration through DeepInfra
 
 ```python
 # src/quantumfinance/config.py
@@ -54,7 +54,7 @@ def get_llm() -> ChatOpenAI:
     )
 ```
 
-## Nó de agente no LangGraph
+## Agent node in LangGraph
 
 ```python
 # src/quantumfinance/agents/market_agent.py
@@ -71,7 +71,7 @@ def build_market_agent():
     )
 ```
 
-## Saída estruturada do DecisionAgent
+## Structured DecisionAgent output
 
 ```python
 from pydantic import BaseModel
@@ -95,7 +95,7 @@ class RecommendationOutput(BaseModel):
     reasoning: str
 ```
 
-## Persistência de recomendação
+## Recommendation persistence
 
 ```python
 # src/quantumfinance/output/storage.py
@@ -115,7 +115,7 @@ def save_recommendation(rec: RecommendationOutput) -> None:
         writer.writerow(rec.model_dump())
 ```
 
-## Imports — ordem obrigatória
+## Imports—mandatory order
 
 ```python
 # 1. stdlib
