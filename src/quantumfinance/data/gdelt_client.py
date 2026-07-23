@@ -1,4 +1,4 @@
-"""Cliente GDELT via Google BigQuery para sentimento histórico de notícias no backtest."""
+"""GDELT Client via Google BigQuery for historical news sentiment in backtesting."""
 
 import pandas as pd
 from google.cloud import bigquery
@@ -15,9 +15,9 @@ NEUTRAL_FALLBACK = {
 BIGQUERY_PROJECT_ID = "entrega-multi-agents"
 GKG_TABLE = "gdelt-bq.gdeltv2.gkg_partitioned"
 
-# _PARTITIONTIME particiona por dia de ingestão e permite o BigQuery podar a
-# tabela (21+ TB no total) sem escanear tudo; o filtro em DATE garante a
-# precisão do período pedido dentro dos dias selecionados pela partição.
+# _PARTITIONTIME partitions by ingestion day and allows BigQuery to prune the
+# table (21+ TB total) without scanning everything; the DATE filter ensures the
+# precision of the requested period within the days selected by the partition.
 QUERY = f"""
 SELECT
     AVG(SAFE_CAST(SPLIT(V2Tone, ",")[OFFSET(0)] AS FLOAT64)) AS avg_tone,
@@ -34,7 +34,7 @@ _client: bigquery.Client | None = None
 
 
 def _get_client() -> bigquery.Client:
-    """Reutiliza um único Client entre chamadas (criar um novo custa ~2s de autenticação)."""
+    """Reuses a single Client across calls (creating a new one costs ~2s in authentication)."""
     global _client
     if _client is None:
         _client = bigquery.Client(project=BIGQUERY_PROJECT_ID)
@@ -42,7 +42,7 @@ def _get_client() -> bigquery.Client:
 
 
 def _label_from_score(score: float) -> str:
-    """Classifica o score normalizado em POSITIVO, NEGATIVO ou NEUTRO."""
+    """Classifies the normalized score as POSITIVO, NEGATIVO, or NEUTRO."""
     if score > 0.6:
         return "POSITIVO"
     if score < 0.4:
@@ -55,9 +55,9 @@ def fetch_gdelt_sentiment(
     date: str,
     window_days: int = 3,
 ) -> dict:
-    """Busca sentimento histórico de notícias via GDELT (BigQuery) para o ticker, no período [date - window_days, date].
+    """Fetches historical news sentiment via GDELT (BigQuery) for the ticker over the period [date - window_days, date].
 
-    Nunca levanta exceção: qualquer erro de rede/API/auth retorna o fallback neutro.
+    Never raises an exception: any network/API/auth error returns the neutral fallback.
     """
     try:
         keywords = TICKER_KEYWORDS.get(ticker, [ticker])

@@ -1,4 +1,4 @@
-"""Coleta de notícias financeiras via RSS."""
+"""Financial news collection via RSS."""
 
 import feedparser
 
@@ -157,7 +157,7 @@ TICKER_KEYWORDS: dict[str, list[str]] = {
 
 
 def fetch_news(ticker: str, max_items: int = 15) -> list[dict]:
-    """Coleta notícias de feeds RSS filtradas por keywords relevantes ao ticker."""
+    """Fetches news from RSS feeds filtered by keywords relevant to the ticker."""
     keywords = TICKER_KEYWORDS.get(ticker, [ticker])
     keywords_lower = [k.lower() for k in keywords]
 
@@ -167,7 +167,7 @@ def fetch_news(ticker: str, max_items: int = 15) -> list[dict]:
         try:
             feed = feedparser.parse(feed_url)
         except Exception:
-            continue  # feed indisponível não deve quebrar o pipeline inteiro
+            continue  # unavailable feed must not break the entire pipeline
 
         for entry in feed.entries:
             title = entry.get("title", "")
