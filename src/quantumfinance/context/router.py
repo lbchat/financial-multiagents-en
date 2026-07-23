@@ -1,4 +1,4 @@
-"""Roteamento de notícias por esfera contextual do Asset Context Map."""
+"""News routing by contextual sphere from the Asset Context Map."""
 
 from pathlib import Path
 
@@ -8,13 +8,13 @@ CONTEXT_MAP_PATH = Path(__file__).parent / "context_map.yaml"
 
 
 def _load_context_map() -> dict:
-    """Carrega o Asset Context Map do YAML."""
+    """Loads the Asset Context Map from YAML."""
     with open(CONTEXT_MAP_PATH, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
 def get_context_keywords(ticker: str) -> dict[str, list[str]]:
-    """Retorna as esferas e keywords cadastradas para o ticker no Asset Context Map."""
+    """Returns the spheres and keywords registered for the ticker in the Asset Context Map."""
     context_map = _load_context_map()
     ticker_data = context_map.get(ticker)
     if ticker_data is None:
@@ -27,9 +27,9 @@ def get_context_keywords(ticker: str) -> dict[str, list[str]]:
 
 
 def route_context_search(ticker: str, news_items: list[dict]) -> dict[str, list[dict]]:
-    """Classifica notícias já coletadas nas esferas do ticker, por keyword match.
+    """Classifies collected news into the ticker's spheres by keyword match.
 
-    Uma notícia pode aparecer em múltiplas esferas se tiver keywords de mais de uma.
+    A news item may appear in multiple spheres if it has keywords from more than one.
     """
     sphere_keywords = get_context_keywords(ticker)
     result: dict[str, list[dict]] = {}

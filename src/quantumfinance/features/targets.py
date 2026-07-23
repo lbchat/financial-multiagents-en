@@ -1,4 +1,4 @@
-"""Features históricas e retornos futuros para o backtest, sem look-ahead bias."""
+"""Historical features and forward returns for backtesting, without look-ahead bias."""
 
 import pandas as pd
 import yfinance as yf
@@ -9,11 +9,11 @@ IBOVESPA_TICKER = "^BVSP"
 
 
 def _is_trading_day(yf_ticker: str, date: str) -> bool:
-    """Confirma que `date` corresponde a um pregão real (não fim de semana nem feriado).
+    """Confirms that `date` corresponds to an actual trading day (not a weekend or holiday).
 
-    `dayofweek` só descarta fins de semana — feriados da B3 (ex: Carnaval) passam
-    despercebidos e fariam o yfinance "escorregar" silenciosamente para o próximo
-    pregão disponível, duplicando valores entre datas de feriado consecutivas.
+    `dayofweek` only excludes weekends — B3 holidays (e.g., Carnival) go
+    undetected and would make yfinance silently "slide" to the next available
+    trading day, duplicating values across consecutive holiday dates.
     """
     target_date = pd.Timestamp(date)
     try:
@@ -34,20 +34,20 @@ def _is_trading_day(yf_ticker: str, date: str) -> bool:
 
 
 def get_historical_features(ticker: str, date: str) -> dict | None:
-    """Calcula indicadores técnicos usando apenas dados anteriores a `date` (sem look-ahead bias)."""
+    """Calculates technical indicators using only data before `date` (without look-ahead bias)."""
     target_date = pd.Timestamp(date)
     if target_date.dayofweek >= 5:
-        return None  # fim de semana, não é dia útil
+        return None  # weekend, not a business day
 
     yf_ticker = f"{ticker}.SA"
     if not _is_trading_day(yf_ticker, date):
-        return None  # feriado — sem pregão nessa data
+        return None  # holiday — no trading session on this date
 
     start_date = target_date - pd.Timedelta(days=90)
 
     try:
-        # end=date é exclusivo no yfinance: garante que nenhum dado de `date`
-        # em diante seja usado no cálculo dos indicadores.
+        # end=date is exclusive in yfinance: ensures no data from `date`
+        # onward is used to calculate the indicators.
         data = yf.download(
             yf_ticker,
             start=start_date.strftime("%Y-%m-%d"),
@@ -68,9 +68,9 @@ def get_historical_features(ticker: str, date: str) -> dict | None:
 
 
 def _compute_forward_return(yf_ticker: str, date: str, days: int) -> float | None:
-    """Calcula o retorno percentual entre o preço em `date` e `days` dias úteis depois."""
+    """Calculates the percentage return between the price on `date` and `days` trading days later."""
     target_date = pd.Timestamp(date)
-    end_date = target_date + pd.Timedelta(days=days * 2 + 5)  # margem para fins de semana/feriados
+    end_date = target_date + pd.Timedelta(days=days * 2 + 5)  # buffer for weekends/holidays
 
     try:
         data = yf.download(
@@ -89,9 +89,9 @@ def _compute_forward_return(yf_ticker: str, date: str, days: int) -> float | Non
     if data.empty or len(data) <= days:
         return None
 
-    # se `date` não foi pregão (feriado), o yfinance "escorrega" pro próximo
-    # dia disponível — sem este check, datas de feriado consecutivas dariam
-    # o mesmo retorno (mesmo preço inicial), como se fossem o mesmo dia.
+    # if `date` was not a trading day (holiday), yfinance "slides" to the next
+    # available day — without this check, consecutive holiday dates would yield
+    # the same return (same initial price), as if they were the same day.
     if data.index[0].strftime("%Y-%m-%d") != target_date.strftime("%Y-%m-%d"):
         return None
 
@@ -101,10 +101,10 @@ def _compute_forward_return(yf_ticker: str, date: str, days: int) -> float | Non
 
 
 def get_forward_return(ticker: str, date: str, days: int = 5) -> float | None:
-    """Retorna o retorno percentual real do ticker nos `days` dias úteis seguintes a `date`."""
+    """Returns the ticker's actual percentage return over the next `days` trading days after `date`."""
     return _compute_forward_return(f"{ticker}.SA", date, days)
 
 
 def get_ibovespa_return(date: str, days: int = 5) -> float | None:
-    """Retorna o retorno percentual do Ibovespa nos `days` dias úteis seguintes a `date`."""
+    """Returns the Ibovespa percentage return over the next `days` trading days after `date`."""
     return _compute_forward_return(IBOVESPA_TICKER, date, days)
