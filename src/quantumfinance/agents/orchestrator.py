@@ -1,4 +1,4 @@
-"""Orquestrador principal do sistema QuantumFinance."""
+"""Main orchestrator for the QuantumFinance system."""
 
 from typing import Literal, Optional
 
@@ -28,7 +28,7 @@ Responda APENAS com uma dessas cinco palavras, sem explicação."""
 
 
 class PipelineState(MessagesState):
-    """Estado do grafo, estendido com os dados coletados no pipeline fixo."""
+    """Graph state, extended with the data collected in the fixed pipeline."""
 
     ticker: Optional[str]
     market_features: Optional[dict]
@@ -36,7 +36,7 @@ class PipelineState(MessagesState):
 
 
 def extract_ticker(text: str) -> str:
-    """Identifica o ticker mencionado no texto, com fallback para o ticker do MVP."""
+    """Identifies the ticker mentioned in the text, falling back to the MVP ticker."""
     text_upper = text.upper()
     for ticker in TICKERS:
         if ticker in text_upper:
@@ -45,7 +45,7 @@ def extract_ticker(text: str) -> str:
 
 
 def build_graph():
-    """Constrói e compila o grafo multiagente."""
+    """Builds and compiles the multi-agent graph."""
 
     market_agent = build_market_agent()
     sentiment_agent = build_sentiment_agent()
@@ -56,7 +56,7 @@ def build_graph():
     def route_intent(
         state: PipelineState,
     ) -> Literal["market_node", "sentiment_node", "diagnostic_node", "context_node", "pipeline_market"]:
-        """Classifica a intenção da pergunta e roteia para o nó correto."""
+        """Classifies the question's intent and routes it to the correct node."""
         last_message = state["messages"][-1].content
         response = llm.invoke([
             HumanMessage(content=ROUTER_PROMPT),
@@ -73,30 +73,30 @@ def build_graph():
         elif intent == "context":
             return "context_node"
         else:
-            return "pipeline_market"  # padrão: pipeline completo
+            return "pipeline_market"  # default fallback: complete pipeline
 
     def market_node(state: PipelineState) -> dict:
-        """Nó do MarketAgent — responde perguntas pontuais sobre indicadores."""
+        """MarketAgent node — answers specific questions about indicators."""
         response = market_agent.invoke(state)
         return {"messages": response["messages"]}
 
     def sentiment_node(state: PipelineState) -> dict:
-        """Nó do SentimentAgent — responde perguntas pontuais sobre sentimento."""
+        """SentimentAgent node — answers specific questions about sentiment."""
         response = sentiment_agent.invoke(state)
         return {"messages": response["messages"]}
 
     def diagnostic_node(state: PipelineState) -> dict:
-        """Nó do DiagnosticAgent — investiga perguntas abertas com ReAct genuíno, sem pipeline fixo."""
+        """DiagnosticAgent node — investigates open-ended questions with genuine ReAct, without a fixed pipeline."""
         response = diagnostic_agent.invoke(state)
         return {"messages": response["messages"]}
 
     def context_node(state: PipelineState) -> dict:
-        """Nó do ContextRouterAgent — analisa esferas temáticas do ativo via Asset Context Map.
+        """ContextRouterAgent node — analyzes the asset's thematic spheres via the Asset Context Map.
 
-        O agente é construído por requisição (não uma vez só, como os demais) porque
-        seu prompt depende do ticker — precisa injetar as esferas reais do Asset Context
-        Map antes de invocar o ReAct, para que o agente cite as esferas corretas mesmo
-        quando não há cobertura de notícias no momento.
+        The agent is constructed per request (not just once, like the others) because
+        its prompt depends on the ticker — it must inject the real spheres from the Asset Context
+        Map before invoking ReAct, so the agent cites the correct spheres even
+        when there is no news coverage at the moment.
         """
         ticker = extract_ticker(str(state["messages"][-1].content))
         context_router_agent = build_context_router_agent(ticker)
@@ -104,23 +104,23 @@ def build_graph():
         return {"messages": response["messages"]}
 
     def pipeline_market(state: PipelineState) -> dict:
-        """Primeiro passo do pipeline de recomendação: coleta dados de mercado.
+        """First step of the recommendation pipeline: collects market data.
 
-        Chama a tool diretamente (sem passar por um LLM) porque esta etapa é
-        determinística — o pipeline fixo não deve depender do LLM decidir
-        usar a tool a cada vez.
+        Calls the tool directly (without going through an LLM) because this step is
+        deterministic — the fixed pipeline must not depend on the LLM deciding
+        to use the tool each time.
         """
         ticker = extract_ticker(str(state["messages"][-1].content))
         market_features = get_market_features.invoke({"ticker": ticker})
         return {"ticker": ticker, "market_features": market_features}
 
     def pipeline_sentiment(state: PipelineState) -> dict:
-        """Segundo passo do pipeline de recomendação: coleta sentimento."""
+        """Second step of the recommendation pipeline: collects sentiment."""
         sentiment_features = get_sentiment_features.invoke({"ticker": state["ticker"]})
         return {"sentiment_features": sentiment_features}
 
     def pipeline_decision(state: PipelineState) -> dict:
-        """Terceiro passo do pipeline de recomendação: gera, persiste e narra a recomendação."""
+        """Third step of the recommendation pipeline: generates, persists, and narrates the recommendation."""
         recommendation_data = generate_recommendation.invoke({"ticker": state["ticker"]})
         save_recommendation(recommendation_data)
 
@@ -134,7 +134,7 @@ def build_graph():
         response = decision_agent.invoke({"messages": [HumanMessage(content=narration_request)]})
         return {"messages": [response["messages"][-1]]}
 
-    # Construção do grafo
+    # Graph construction
     graph = StateGraph(PipelineState)
 
     graph.add_node("market_node", market_node)
@@ -168,11 +168,11 @@ def build_graph():
     return graph.compile()
 
 
-# Instância global do grafo compilado
+# Global instance of the compiled graph
 app = build_graph()
 
 
 def ask(question: str) -> str:
-    """Envia uma pergunta ao sistema e retorna a resposta final."""
+    """Sends a question to the system and returns the final response."""
     result = app.invoke({"messages": [HumanMessage(content=question)]})
     return result["messages"][-1].content
