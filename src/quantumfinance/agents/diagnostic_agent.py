@@ -15,7 +15,7 @@ a passo antes de concluir. Nunca emita recomendações formais de COMPRAR/VENDER
 
 
 def build_diagnostic_agent():
-    """Constrói o DiagnosticAgent com acesso a todas as tools do sistema."""
+    """Builds the DiagnosticAgent with access to all system tools."""
     return create_react_agent(
         model=get_llm(),
         tools=[get_market_features, get_sentiment_features, generate_recommendation],
