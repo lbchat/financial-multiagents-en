@@ -1,4 +1,4 @@
-"""Tool de análise contextual por esferas temáticas, registrada no ContextRouterAgent."""
+"""Contextual-sphere analysis tool registered with ContextRouterAgent."""
 
 from langchain_core.tools import tool
 
@@ -6,7 +6,7 @@ from quantumfinance.context.router import get_context_keywords, route_context_se
 from quantumfinance.data.news_data import fetch_news
 from quantumfinance.features.sentiment import aggregate_sentiment
 
-NEUTRAL_OVERALL_SENTIMENT = 0.5  # usado quando nenhuma esfera tem notícias
+NEUTRAL_OVERALL_SENTIMENT = 0.5  # used when no sphere has news
 
 
 @tool

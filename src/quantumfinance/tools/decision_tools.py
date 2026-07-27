@@ -12,16 +12,16 @@ def apply_decision_rules(
     macd_signal: str,
     sentiment_score: float = 0.5,
 ) -> dict:
-    """Aplica as regras de decisão (RSI, MACD, sentimento) e retorna recomendação, confiança e justificativa."""
+    """Applies the decision rules (RSI, MACD, sentiment) and returns the recommendation, confidence, and reasoning."""
     bullish_signals = 0
     bearish_signals = 0
 
     if rsi < 30:
-        bullish_signals += 2  # sobrevenda forte
+        bullish_signals += 2  # strong oversold
     elif rsi < 45:
         bullish_signals += 1
     elif rsi > 70:
-        bearish_signals += 2  # sobrecompra forte
+        bearish_signals += 2  # strong overbought
     elif rsi > 55:
         bearish_signals += 1
 

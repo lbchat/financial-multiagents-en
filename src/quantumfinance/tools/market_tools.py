@@ -1,4 +1,4 @@
-"""Tools de mercado registradas no MarketAgent."""
+"""Market tools registered with MarketAgent."""
 
 from langchain_core.tools import tool
 from quantumfinance.data.market_data import fetch_ohlcv
