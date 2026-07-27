@@ -9,7 +9,7 @@ remains authoritative.
 - Original Portuguese repository: `lbchat/entrega-multiagents`
 - English repository: `lbchat/financial-multiagents-en`
 - Translation branch: `translate-to-english`
-- Recorded translation HEAD: `030b155`
+- Recorded translation HEAD: `6e4b5e247ad07a6755dc3f62cd79ba63da03b2a7`
 - Baseline commit: `4cf6d3a4bdb2234baec30746809d55467a07d641`
 - Baseline tag: `pre-translation-baseline`
 - The original Portuguese repository must remain untouched.
@@ -62,6 +62,7 @@ remains authoritative.
 - [x] `6edef5c` — `docs: translate agent builder annotations`
 - [x] `233b42f` — `docs: translate orchestrator developer annotations`
 - [x] `030b155` — `docs: translate Gradio developer docstrings`
+- [x] `6e4b5e2` — `docs: translate non-runtime tool-module annotations`
 
 ## 5. Protected inventory
 
@@ -81,7 +82,7 @@ remains authoritative.
 
 ## 6. Remaining work
 
-- [ ] Phase 2B-7 — safe tool-module annotations
+- [x] Phase 2B-7 — safe tool-module annotations
 - [ ] Phase 2B-8 — script annotations, excluding protected `test_llm.py` tool
   docstring
 - [ ] Phase 2B-9 — context, output, and recommendation test docstrings
