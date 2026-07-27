@@ -9,7 +9,7 @@ remains authoritative.
 - Original Portuguese repository: `lbchat/entrega-multiagents`
 - English repository: `lbchat/financial-multiagents-en`
 - Translation branch: `translate-to-english`
-- Recorded translation HEAD: `967139e7a911c5c353752234aee23c6a3c722e0d`
+- Recorded translation HEAD: `06b0bbb19c0266d7809e7b98a9c744c9a8a48da8`
 - Baseline commit: `4cf6d3a4bdb2234baec30746809d55467a07d641`
 - Baseline tag: `pre-translation-baseline`
 - The original Portuguese repository must remain untouched.
@@ -66,6 +66,8 @@ remains authoritative.
 - [x] `5d92f56` — `docs: translate script developer annotations`
 - [x] `d85f05e` — `docs: translate context output and recommendation test docstrings`
 - [x] `967139e` — `docs: translate sentiment and technical test docstrings`
+- [x] `09927b5` — `docs: translate notebook code-cell docstrings`
+- [x] `06b0bbb` — `docs: translate notebook Markdown documentation`
 
 ## 5. Protected inventory
 
@@ -90,8 +92,8 @@ remains authoritative.
   docstring
 - [x] Phase 2B-9 — context, output, and recommendation test docstrings
 - [x] Phase 2B-10 — sentiment and technical test docstrings
-- [ ] Phase 2B-11 — notebook code-cell docstrings
-- [ ] Translate notebook Markdown cells while preserving all outputs and
+- [x] Phase 2B-11 — notebook code-cell docstrings
+- [x] Translate notebook Markdown cells while preserving all outputs and
   metadata
 - [ ] Repository-wide Portuguese occurrence audit
 - [ ] Documentation-accuracy corrections in separate commits
