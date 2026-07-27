@@ -1,23 +1,23 @@
-"""Testes do pipeline de sentimento."""
+"""Sentiment pipeline tests."""
 
 from quantumfinance.features.sentiment import aggregate_sentiment, classify_sentiment
 
 
 def test_classify_sentiment_returns_valid_label():
-    """Valida que a classificação retorna um dos três labels esperados."""
+    """Validates that classification returns one of the three expected labels."""
     result = classify_sentiment("A empresa teve excelentes resultados no trimestre")
     assert result["label"] in ("POSITIVO", "NEGATIVO", "NEUTRO")
 
 
 def test_classify_sentiment_scores_sum_to_one():
-    """Valida que os scores de probabilidade somam aproximadamente 1."""
+    """Validates that the probability scores sum to approximately 1."""
     result = classify_sentiment("O mercado reagiu com cautela à notícia")
     total = sum(result["scores"].values())
     assert abs(total - 1.0) < 0.01
 
 
 def test_aggregate_sentiment_empty_list():
-    """Valida que lista vazia de notícias não quebra a agregação."""
+    """Validates that an empty news list does not break aggregation."""
     result = aggregate_sentiment([])
     assert result["sentiment_label"] == "NEUTRO"
     assert result["news_count"] == 0
@@ -25,7 +25,7 @@ def test_aggregate_sentiment_empty_list():
 
 
 def test_aggregate_sentiment_has_required_keys():
-    """Valida que a saída agregada tem todas as chaves obrigatórias."""
+    """Validates that the aggregated output contains all required keys."""
     news = [{"title": "Empresa anuncia recorde de lucros", "summary": "Resultado positivo no trimestre"}]
     result = aggregate_sentiment(news)
     required_keys = {"sentiment_score", "sentiment_label", "news_count", "top_headlines"}
@@ -33,18 +33,18 @@ def test_aggregate_sentiment_has_required_keys():
 
 
 def test_sentiment_score_in_valid_range():
-    """Valida que o score agregado está sempre entre 0 e 1."""
+    """Validates that the aggregated score is always between 0 and 1."""
     news = [{"title": "Notícia neutra sobre o mercado", "summary": ""}]
     result = aggregate_sentiment(news)
     assert 0.0 <= result["sentiment_score"] <= 1.0
 
 
 def test_classify_sentiment_correct_polarity():
-    """Valida que frases claramente positivas e negativas recebem o label correto.
+    """Validates that clearly positive and negative sentences receive the correct label.
 
-    Protege contra regressão do bug de mapeamento de labels do FinBERT-PT-BR,
-    onde id2label do modelo (POSITIVE/NEGATIVE/NEUTRAL) foi inicialmente
-    associado na ordem errada às labels em português.
+    Protects against regression of the FinBERT-PT-BR model-label mapping bug,
+    where the model's id2label (POSITIVE/NEGATIVE/NEUTRAL) was initially
+    associated with the Portuguese labels in the wrong order.
     """
     positive_result = classify_sentiment(
         "A empresa anunciou lucro recorde e forte crescimento no trimestre"
