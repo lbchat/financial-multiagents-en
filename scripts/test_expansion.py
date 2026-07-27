@@ -1,4 +1,4 @@
-"""Testa o agente para todos os tickers monitorados."""
+"""Tests the agent for all monitored tickers."""
 import time
 
 from quantumfinance.agents.orchestrator import ask
@@ -14,6 +14,6 @@ for ticker in TICKERS:
         print(f"OK: {ticker}")
     except Exception as e:
         print(f"FALHOU: {ticker}: {e}")
-    time.sleep(2)  # pausa entre chamadas para não sobrecarregar a API
+    time.sleep(2)  # pause between calls to avoid overloading the API
 
 print("\n\nResumo: verifique data/recommendations.csv")
