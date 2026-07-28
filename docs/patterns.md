@@ -2,9 +2,20 @@
 
 ## Standard tool
 
-Every tool is a pure Python function. No side effects and no calls to other agents.
+Tools are ordinary Python functions exposed through LangChain's `@tool`
+decorator, but they are not necessarily pure:
 
-Language policy for these examples: Portuguese `@tool` docstrings, agent prompts, runtime exceptions, and machine values are intentional because the application runtime is Brazilian Portuguese only. Ordinary developer-facing docstrings must be written in English. All fenced examples remain unchanged in this policy-only phase, including obsolete or non-runtime Portuguese content.
+- `apply_decision_rules` is a deterministic helper with no external I/O.
+- `get_market_features`, `get_sentiment_features`, and `analyze_context` call
+  data/model layers that perform external I/O or inference.
+- `generate_recommendation` invokes the market and sentiment tools before
+  applying the deterministic rules.
+- `save_recommendation` and `load_recommendations` perform filesystem I/O.
+
+Language policy for these examples: Portuguese `@tool` docstrings, agent
+prompts, runtime exceptions, and machine values are intentional because the
+application runtime is Brazilian Portuguese only. Ordinary developer-facing
+docstrings and comments use English.
 
 ```python
 # src/quantumfinance/tools/market_tools.py
@@ -14,8 +25,8 @@ from quantumfinance.data.market_data import fetch_ohlcv
 
 @tool
 def get_market_features(ticker: str) -> dict:
-    """Retorna preço atual e indicadores técnicos para o ticker informado."""
-    data = fetch_ohlcv(ticker, period="3mo")
+    """Retorna preço atual e indicadores técnicos (RSI, MACD, médias móveis, Bollinger) para o ticker informado."""
+    data = fetch_ohlcv(ticker)
     return calculate_indicators(data)
 ```
 
@@ -23,17 +34,30 @@ Rules:
 - LangChain `@tool` decorator
 - Type hints on all parameters and on the return value
 - One-line docstring in Portuguese—the LLM uses it to decide when to call the tool
-- Exceptions handled explicitly within the function, never silenced
+- Errors handled at the lowest appropriate data boundary and never silently
+  swallowed
 
 ## Error handling in functions that call external APIs
 
 ```python
+import pandas as pd
+import yfinance as yf
+
+
 def fetch_ohlcv(ticker: str, period: str = "3mo") -> pd.DataFrame:
-    """Coleta dados OHLCV do Yahoo Finance para o ticker informado."""
+    """Fetches OHLCV data from Yahoo Finance for the specified ticker."""
+    yf_ticker = f"{ticker}.SA"
     try:
-        data = yf.download(ticker, period=period, progress=False)
+        data = yf.download(
+            yf_ticker,
+            period=period,
+            progress=False,
+            auto_adjust=True,
+        )
         if data.empty:
-            raise ValueError(f"Nenhum dado retornado para {ticker}")
+            raise ValueError(f"Nenhum dado retornado para {ticker} ({yf_ticker})")
+        if isinstance(data.columns, pd.MultiIndex):
+            data.columns = data.columns.get_level_values(0)
         return data
     except Exception as e:
         raise RuntimeError(f"Erro ao buscar dados para {ticker}: {e}") from e
@@ -44,14 +68,22 @@ def fetch_ohlcv(ticker: str, period: str = "3mo") -> pd.DataFrame:
 ```python
 # src/quantumfinance/config.py
 import os
+
+from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
+from pydantic import SecretStr
+
+load_dotenv()
 
 def get_llm() -> ChatOpenAI:
-    """Retorna instância configurada do LLM via DeepInfra."""
+    """Returns the configured LLM instance via DeepInfra."""
+    api_key = os.getenv("DEEPINFRA_API_KEY")
+    if not api_key:
+        raise RuntimeError("DEEPINFRA_API_KEY não encontrada. Configure o arquivo .env")
     return ChatOpenAI(
-        model="Qwen/Qwen2.5-7B-Instruct",
+        model="Qwen/Qwen3-235B-A22B-Instruct-2507",
         base_url="https://api.deepinfra.com/v1/openai",
-        api_key=os.getenv("DEEPINFRA_API_KEY"),
+        api_key=SecretStr(api_key),
         temperature=0.1,
     )
 ```
@@ -64,14 +96,24 @@ from langgraph.prebuilt import create_react_agent
 from quantumfinance.config import get_llm
 from quantumfinance.tools.market_tools import get_market_features
 
+MARKET_AGENT_PROMPT = """Você é o MarketAgent do sistema QuantumFinance.
+
+Sua única responsabilidade é coletar dados de mercado e calcular indicadores técnicos.
+Nunca emita recomendações de compra ou venda."""
+
+
 def build_market_agent():
-    """Constrói o MarketAgent com suas tools registradas."""
+    """Builds the MarketAgent with its registered tools."""
     return create_react_agent(
         model=get_llm(),
         tools=[get_market_features],
-        prompt="Você é o MarketAgent. Sua única responsabilidade é coletar dados de mercado e calcular indicadores técnicos. Nunca emita recomendações."
+        prompt=MARKET_AGENT_PROMPT,
     )
 ```
+
+The source prompt contains additional PT-BR instructions for immediate tool
+use and multi-ticker comparisons. Keep prompts in named constants so their
+runtime language and agent responsibility are explicit.
 
 ## Structured DecisionAgent output
 
@@ -86,9 +128,9 @@ class Recommendation(str, Enum):
 
 class RecommendationOutput(BaseModel):
     ticker: str
-    date: str                    # formato YYYY-MM-DD
+    date: str                    # YYYY-MM-DD format
     recommendation: Recommendation
-    confidence: float            # 0.0 a 1.0
+    confidence: float            # 0.0 to 1.0
     rsi: float
     macd_signal: str
     sentiment_score: float
@@ -97,24 +139,71 @@ class RecommendationOutput(BaseModel):
     reasoning: str
 ```
 
+## Validated serialization at the tool boundary
+
+`generate_recommendation` constructs the validated Pydantic model and converts
+it to JSON-compatible primitives before returning the tool result:
+
+```python
+@tool
+def generate_recommendation(ticker: str) -> dict:
+    """Gera recomendação fundamentada de COMPRAR, VENDER ou AGUARDAR para o ticker informado."""
+    # Market and sentiment collection omitted here; see decision_tools.py.
+    output = RecommendationOutput(
+        ticker=ticker,
+        date=date.today().isoformat(),
+        recommendation=Recommendation(decision["recommendation"]),
+        confidence=decision["confidence"],
+        rsi=rsi,
+        macd_signal=macd_signal,
+        sentiment_score=sentiment_score,
+        sentiment_label=sentiment_label,
+        top_headlines=top_headlines[:3],
+        reasoning=decision["reasoning"],
+    )
+    return output.model_dump(mode="json")
+```
+
+Always use `mode="json"` at this boundary so `Recommendation` enum members
+become plain persisted strings.
+
 ## Recommendation persistence
 
 ```python
 # src/quantumfinance/output/storage.py
 import csv
 from pathlib import Path
-from quantumfinance.agents.decision_agent import RecommendationOutput
 
 RECOMMENDATIONS_PATH = Path("data/recommendations.csv")
 
-def save_recommendation(rec: RecommendationOutput) -> None:
-    """Persiste uma recomendação no CSV histórico."""
+FIELDNAMES = [
+    "ticker", "date", "recommendation", "confidence",
+    "rsi", "macd_signal", "sentiment_score", "sentiment_label",
+    "top_headlines", "reasoning",
+]
+
+
+def save_recommendation(data: dict) -> None:
+    """Persists a recommendation in the historical CSV."""
+    RECOMMENDATIONS_PATH.parent.mkdir(parents=True, exist_ok=True)
     write_header = not RECOMMENDATIONS_PATH.exists()
     with open(RECOMMENDATIONS_PATH, "a", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=rec.model_fields.keys())
+        writer = csv.DictWriter(
+            f,
+            fieldnames=FIELDNAMES,
+            extrasaction="ignore",
+        )
         if write_header:
             writer.writeheader()
-        writer.writerow(rec.model_dump())
+        writer.writerow(data)
+
+
+def load_recommendations() -> list[dict]:
+    """Loads the recommendation history from the CSV."""
+    if not RECOMMENDATIONS_PATH.exists():
+        return []
+    with open(RECOMMENDATIONS_PATH, "r", encoding="utf-8") as f:
+        return list(csv.DictReader(f))
 ```
 
 ## Imports—mandatory order
@@ -126,12 +215,12 @@ import csv
 from pathlib import Path
 from enum import Enum
 
-# 2. pacotes externos
+# 2. Third-party packages
 import pandas as pd
 import yfinance as yf
 from langchain_core.tools import tool
 
-# 3. módulos internos
+# 3. Internal modules
 from quantumfinance.config import get_llm
 from quantumfinance.features.technical import calculate_indicators
 ```

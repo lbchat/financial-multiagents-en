@@ -1,24 +1,41 @@
 # Architectural Decisions
 
 ## Agent architecture
-**Decision:** 3 specialized agents + orchestrator (MarketAgent, SentimentAgent, DecisionAgent).
-**Rationale:** the minimum functional setup that meets the course requirements. Each agent has a single, clear responsibility.
-**Note:** `create_react_agent` in the installed version of LangGraph (1.2.6) no longer accepts the `state_modifier` parameter used in older versions—the correct name is `prompt`. Applied to all three agents.
+**Current decision:** five agent roles plus a LangGraph orchestrator:
+`MarketAgent`, `SentimentAgent`, `DecisionAgent`, `DiagnosticAgent`, and
+`ContextRouterAgent`.
+**Rationale:** the original three-role MVP covered market data, sentiment, and
+recommendation. Post-delivery work added an investigative role and a
+ticker-specific contextual role without changing the responsibilities of the
+original three.
+**Implementation:** all five builders use `create_react_agent(..., prompt=...)`.
+`ContextRouterAgent` is built per request because its prompt contains the
+ticker's configured spheres.
 
 ## Orchestrator coordination
 **Decision:** hybrid pattern—a fixed pipeline for complete recommendations and dynamic routing for specific questions.
 **Rationale:** the fixed pipeline ensures reliability in the primary use case. Routing makes the conversational interface fluid and efficient.
-**Implementation:** the first node in the LangGraph graph is a conditional routing node that classifies the question's intent.
+**Implementation:** the first node classifies the question as `market`,
+`sentiment`, `diagnostic`, `context`, or `recommendation`. Those outcomes route
+to `market_node`, `sentiment_node`, `diagnostic_node`, `context_node`, or
+`pipeline_market`, respectively; an unrecognized router response also falls
+back to `pipeline_market`.
 
 ## Deterministic pipeline in the recommendation flow
 **Decision:** the orchestrator's `pipeline_market`, `pipeline_sentiment`, and `pipeline_decision` stages call the tools directly in Python, without going through the LLM's ReAct flow. The LLM is used only in the final stage to narrate the result.
 **Rationale:** guaranteed reliability on the primary path—it eliminates the risk of the model skipping a stage or calling the wrong tool.
-**Accepted trade-off:** the recommendation flow is less "agentic" in the strict sense, offset by genuine dynamic routing for specific questions (`market_node`, `sentiment_node`).
+**Accepted trade-off:** the recommendation flow is less "agentic" in the strict
+sense, offset by genuine dynamic routing for market, sentiment, diagnostic, and
+contextual questions.
 
 ## Primary LLM
-**Decision:** Qwen 2.5 7B Instruct via DeepInfra API.
-**Rationale:** open source, low latency through the API, compatible with the OpenAI SDK, with credits available (~$5). If tool calling proves inconsistent, the fallback is Llama 3.1 8B—only `config.py` changes.
-**Integration:** `langchain_openai.ChatOpenAI` with `base_url="https://api.deepinfra.com/v1/openai"`.
+**Current decision:** `Qwen/Qwen3-235B-A22B-Instruct-2507` via the DeepInfra API.
+**Integration:** `langchain_openai.ChatOpenAI` with
+`base_url="https://api.deepinfra.com/v1/openai"`, `temperature=0.1`, and the
+`DEEPINFRA_API_KEY` loaded from the environment.
+**Historical note:** the initial plan evaluated Qwen 2.5 7B and named Llama 3.1
+8B as a possible fallback. Those names describe the earlier planning decision,
+not the model configured by the current source.
 
 ## Sentiment model
 **Decision:** FinBERT-PT-BR via HuggingFace transformers, inference only.
@@ -26,10 +43,13 @@
 **Note:** do not use LeIA/VADER in parallel. Use a single sentiment model on the critical path.
 
 ## State persistence
-**Decision:** local CSV and JSON files in `data/`.
-**Rationale:** maximum simplicity, human-readable, versionable, and the CSV is a direct input to the backtest.
-- `data/recommendations.csv`—recommendation history
-- `data/sessions.json`—short-term Gradio memory
+**Decision:** local CSV persistence for recommendation history.
+**Rationale:** `data/recommendations.csv` is simple and human-readable, and its
+schema can be consumed by later analysis. `save_recommendation` creates the
+parent directory and appends rows; `load_recommendations` reads them for the
+Gradio sidebar.
+**Current limitation:** conversation state is held in the Gradio session while
+the interface is running. No `data/sessions.json` persistence is implemented.
 
 ## Recommendation output format
 **Decision:** structured JSON internally, converted to natural-language text for display.
@@ -59,8 +79,12 @@
 **Rationale:** TA-Lib has a native dependency that causes installation problems on Windows. pandas-ta is pure Python.
 
 ## Tests
-**Decision:** pytest focused on ~15 critical functions.
-**What to test:** RSI calculation (value between 0-100), MACD (3 components), sentiment (correct format), news parser (empty feed without crashing), recommendation enum validation, and required fields in the output JSON.
+**Decision:** pytest coverage focused on critical context routing,
+recommendation persistence and validation, sentiment behavior, and technical
+features.
+**Static inventory:** 23 `test_*` functions are currently defined across the
+tracked test modules. This is a source count, not a claim that the tests were
+executed during the documentation update.
 
 ## MVP ticker
 **Decision:** PETR4.
@@ -68,6 +92,7 @@
 
 ## What is not on the critical path
 - Azure, social media—portfolio extensions, not MVP dependencies
-- Context Router and analysis by contextual areas—bonus work, implement after Stage 5
+- Context Router and the Asset Context Map were implemented as post-delivery
+  bonus work; broader contextual-source coverage remains optional
 - Supervised model using historical features—bonus work, implement after Stage 6
 - Deep Learning (LSTM, Transformer)—leave for a future project
