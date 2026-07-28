@@ -119,7 +119,7 @@ The full rationale for each decision, including the accepted trade-offs, is avai
 
 ## Stack
 
-Python 3.11+ · LangGraph · DeepInfra (Qwen3-235B-A22B-Instruct) · FinBERT-PT-BR · yfinance · feedparser · pandas-ta · Google BigQuery · Gradio · pytest/ruff/mypy
+Python 3.11+ · LangGraph · DeepInfra using Qwen/Qwen3-235B-A22B-Instruct-2507 · FinBERT-PT-BR · yfinance · feedparser · pandas-ta · Google BigQuery · Gradio · pytest/ruff/mypy
 
 ## Project structure
 
