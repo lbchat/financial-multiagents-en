@@ -1,6 +1,6 @@
-"""Runs the backtest with historical sentiment via GDELT/BigQuery (Etapa 6.5, Tarefa 5).
+"""Runs the backtest with historical sentiment via GDELT/BigQuery (Stage 6.5, Task 5).
 
-90 full days, aligned with the base backtest (Etapa 6): BigQuery does not have
+90 full days, aligned with the base backtest (Stage 6): BigQuery does not have
 the informal rate limit of GDELT's API REST, so there is no longer a need
 to reduce the sample size.
 """
