@@ -6,7 +6,7 @@ Multi-agent system that recommends **COMPRAR / VENDER / AGUARDAR** (the literal 
 
 Deciding whether to buy, sell, or hold a stock requires combining two types of information that usually live in separate places: **what the numbers say** (price, RSI, MACD, moving averages) and **what is being reported** about the company (quarterly results, management changes, regulatory risk). Doing this manually every day for several stocks does not scale.
 
-The solution here is a **multi-agent system**: an orchestrator determines whether the user's question calls for a complete recommendation or only a specific data point, then directs the work to specialized agents—one that looks only at the market, one that looks only at sentiment, and one that combines both into a final recommendation with an explanation of the underlying logic. Each recommendation is recorded in a CSV file together with all the indicators that motivated it, making it possible to revisit and audit why the agent made a given decision.
+The solution here is a **multi-agent system** with five implemented roles: `MarketAgent` collects technical indicators, `SentimentAgent` analyzes recent news, `DecisionAgent` narrates structured recommendations, `DiagnosticAgent` investigates open-ended market questions, and `ContextRouterAgent` analyzes ticker-specific thematic spheres. A LangGraph orchestrator routes each question to the appropriate role or to the complete recommendation pipeline. Each complete recommendation is recorded in a CSV file together with the indicators that motivated it, making it possible to revisit and audit why the system made a given decision.
 
 The system covers 4 B3-listed stocks: **PETR4 · VALE3 · BBAS3 · ITUB4**.
 
@@ -16,10 +16,11 @@ Repository documentation is written in English for international readability. Th
 
 ## Architecture
 
-3 specialized agents (`MarketAgent`, `SentimentAgent`, `DecisionAgent`) plus a LangGraph orchestrator with **hybrid** coordination:
+Five agent roles (`MarketAgent`, `SentimentAgent`, `DecisionAgent`, `DiagnosticAgent`, and `ContextRouterAgent`) plus a LangGraph orchestrator with **hybrid** coordination:
 
 - **Fixed pipeline** (`pipeline_market → pipeline_sentiment → pipeline_decision`) for complete recommendations—the tools are called directly in Python, without going through the LLM, ensuring that no step is ever skipped and that the wrong tool is not called. The LLM (`DecisionAgent`) is used only at the end to narrate the result that has already been calculated.
-- **Dynamic routing** (`market_node`, `sentiment_node`) for specific questions ("qual o RSI de VALE3?", meaning "what is VALE3's RSI?")—here, the LLM genuinely decides which tools to call, using a true ReAct approach.
+- **Dynamic routing** to `market_node`, `sentiment_node`, `diagnostic_node`, or `context_node` for indicator, sentiment, investigative, or contextual questions. The first three use prebuilt ReAct agents; `context_node` builds a ticker-specific `ContextRouterAgent` before invoking it. For example, the literal PT-BR question "qual o RSI de VALE3?" means "what is VALE3's RSI?"
+- **Complete recommendation routing** uses the router's `recommendation` intent and falls back to `pipeline_market`, which continues through `pipeline_sentiment` and `pipeline_decision`.
 
 See the complete diagram (agent flow + backtest pipeline) in [`docs/architecture.md`](docs/architecture.md). Detailed decisions and trade-offs are documented in [`docs/decisions.md`](docs/decisions.md).
 
@@ -34,8 +35,8 @@ See the complete diagram (agent flow + backtest pipeline) in [`docs/architecture
 ### Installation
 
 ```powershell
-git clone <url-do-repositorio>
-cd ENTREGA_MULTI-AGENTS
+git clone https://github.com/lbchat/financial-multiagents-en.git
+cd financial-multiagents-en
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -e ".[dev]"
@@ -65,7 +66,7 @@ The interface opens at `http://localhost:7860`. Because the application runtime 
 ### Running tests and quality checks
 
 ```powershell
-pytest tests/ -v       # 20 tests, critical functions
+pytest tests/ -v       # 23 test functions are currently defined
 mypy src/               # types
 ruff check src/         # lint
 ```
@@ -80,12 +81,12 @@ python scripts/run_backtest_gdelt.py
 
 Historical simulation over the last ~90 trading days for the 4 tickers, comparing each day's recommendation with the actual return over the next 5 trading sessions and with the Ibovespa over the same period. The backtest **does not call the LLM or FinBERT**—it uses only the deterministic decision function (`apply_decision_rules`) to isolate the quality of the technical+sentiment signal from the quality of the natural-language narrative.
 
-| Mode | Rows | Directional accuracy | Beat Ibovespa | Sentiment |
-|---|---|---|---|---|
-| Placeholder (fixed neutral sentiment) | 229 | ~40% | ~52% | `sentiment_score=0.5` always |
-| GDELT/BigQuery (real historical sentiment) | 243 | ~42% | ~53.8% | 100% real, 0% fallback |
+| Mode | Committed CSV data rows | Rows in saved notebook metrics | Directional accuracy | Beat Ibovespa | Sentiment |
+|---|---:|---:|---:|---:|---|
+| Placeholder (fixed neutral sentiment) | 252 | 248 | 44.30% | 53.07% | `sentiment_score=0.5` always |
+| GDELT/BigQuery (real historical sentiment) | 244 | 244 | 42.41% | 53.12% | GDELT with neutral fallback when unavailable |
 
-*(Exact values vary slightly between runs because the backtest window is always "the last 90 days"—rolling rather than fixed. The numbers above are representative of what the `04_backtest_and_evaluation.ipynb` notebook produces.)*
+The committed artifacts currently contain 252 rows in `notebooks/data/backtest_results.csv`, 244 rows in both `data/backtest_results_gdelt.csv` and `notebooks/data/backtest_results_gdelt.csv`, and 1 row in `notebooks/data/recommendations.csv`. The metric values above are the saved outputs in `04_backtest_and_evaluation.ipynb`: its placeholder run used 248 rows, while its GDELT run used 244. They were not recomputed from the current CSV files during this documentation update. Counts can change in later executions because the backtest window is rolling.
 
 **An honest reading of the numbers:** accuracy of ~40-42% on a 3-class decision (COMPRAR/VENDER/AGUARDAR, random baseline ~33%) is above chance, but this is not a validated signal for real-world use—it is evidence that the logic is sound, not that it is profitable. Beating the Ibovespa ~52-54% of the time is also close to a coin toss. The more concrete improvement from using real sentiment (GDELT) instead of the neutral placeholder was small and concentrated on a few specific days (see the notebook), because news sentiment remains in a neutral range most of the time and does not change the decision (`apply_decision_rules` allows sentiment to have an effect only when the score rises above 0.6 or falls below 0.4).
 
@@ -114,7 +115,7 @@ The full rationale for each decision, including the accepted trade-offs, is avai
 - **Batch queries in BigQuery and bulk downloads in yfinance**—replace the hundreds of sequential backtest calls with a single aggregate query (`GROUP BY ticker, date`) and a single `yf.download` per ticker, eliminating most network round trips.
 - **Integration with CVM data**—fundamentals and regulatory disclosures for the monitored companies, supplementing news sentiment with official structured data.
 - **Integration with the Brazilian Central Bank's Focus Report**—market expectations for the Selic rate, inflation, and exchange rates as additional macroeconomic context for the decision.
-- **Context Router Agent**—an agent that dynamically decides which thematic areas (political, environmental, regulatory) are relevant to each ticker before retrieving sentiment, instead of using the current fixed set of keywords.
+- **Broader contextual coverage**—extend the implemented `ContextRouterAgent` and Asset Context Map with additional official and sector-specific sources while preserving auditable ticker-specific spheres.
 
 ## Stack
 
@@ -124,13 +125,16 @@ Python 3.11+ · LangGraph · DeepInfra (Qwen3-235B-A22B-Instruct) · FinBERT-PT-
 
 ```
 src/quantumfinance/
-├── data/          # price, news, and historical sentiment collection (GDELT/BigQuery)
-├── features/      # technical indicators, sentiment, backtest targets
-├── agents/        # MarketAgent, SentimentAgent, DecisionAgent, orchestrator
-├── tools/         # tools registered with the agents
-├── output/        # recommendation persistence
+├── agents/        # five agent roles and the LangGraph orchestrator
+├── app/           # Gradio conversational interface
 ├── backtesting/   # historical simulation and metrics
-└── app/           # Gradio interface
+├── context/       # Asset Context Map and thematic news routing
+├── data/          # price, news, and historical sentiment collection
+├── features/      # technical indicators, sentiment, and backtest targets
+├── output/        # recommendation CSV persistence
+├── tools/         # market, sentiment, decision, and context tools
+├── config.py      # DeepInfra LLM configuration
+└── universe.py    # monitored ticker universe
 tests/             # pytest for critical functions
 notebooks/         # visual validation and end-to-end demo
 docs/              # decisions, progress, coding standards, architecture

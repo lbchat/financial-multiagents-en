@@ -24,12 +24,16 @@ Multi-agent system for recommending Brazilian stocks (COMPRAR / VENDER / AGUARDA
 ## Structure
 - `src/quantumfinance/data/`—price and news collection
 - `src/quantumfinance/features/`—technical indicators and sentiment
-- `src/quantumfinance/agents/`—orchestrator and specialized agents
+- `src/quantumfinance/agents/`—five agent roles and the LangGraph orchestrator
 - `src/quantumfinance/tools/`—tools registered with the agents
+- `src/quantumfinance/context/`—Asset Context Map and thematic news routing
 - `src/quantumfinance/output/`—formatting and persistence
+- `src/quantumfinance/backtesting/`—historical simulation and metrics
 - `src/quantumfinance/app/`—Gradio
+- `src/quantumfinance/universe.py`—monitored ticker universe
+- `src/quantumfinance/config.py`—DeepInfra LLM configuration
 - `tests/`—pytest focused on critical functions
-- `data/`—recommendations.csv and sessions.json (generated at runtime)
+- `data/`—backtest artifacts and `recommendations.csv` when generated at runtime; session-file persistence is not implemented
 
 ## Commands
 - Interface: `python src/quantumfinance/app/gradio_app.py`
@@ -44,7 +48,7 @@ Multi-agent system for recommending Brazilian stocks (COMPRAR / VENDER / AGUARDA
 
 ## Do not
 - Never use TA-Lib—use pandas-ta
-- Never hard-code tickers—use `TICKERS` from `config.py`
+- Never hard-code tickers—use `TICKERS` from `src/quantumfinance/universe.py`
 - Never hard-code API keys—use `.env` through python-dotenv
 - Never put business logic in the agents—it belongs in the tools and in `features/`
 - Never shuffle backtest data—always use chronological order
