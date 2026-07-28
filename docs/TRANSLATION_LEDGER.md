@@ -9,7 +9,7 @@ remains authoritative.
 - Original Portuguese repository: `lbchat/entrega-multiagents`
 - English repository: `lbchat/financial-multiagents-en`
 - Translation branch: `translate-to-english`
-- Recorded translation HEAD: `efd0906474cec5a86a958c617bb9da8743c696db`
+- Recorded translation HEAD: `179117ef393994ef4c1139b9d82c14a45900de2a`
 - Baseline commit: `4cf6d3a4bdb2234baec30746809d55467a07d641`
 - Baseline tag: `pre-translation-baseline`
 - The original Portuguese repository must remain untouched.
@@ -72,6 +72,7 @@ remains authoritative.
 - [x] `20eb35c` — `docs: update current architecture and setup guidance`
 - [x] `0c5ad8b` — `docs: align decisions and development patterns with source`
 - [x] `efd0906` — `docs: reconcile current project progress`
+- [x] `179117e` — `docs: correct README model identifier`
 
 ## 5. Protected inventory
 
@@ -100,6 +101,15 @@ remains authoritative.
 - All five protected `@tool` docstrings remain PT-BR.
 - The protected `# AGUARDAR` comment remains unchanged.
 - `PLANO_DE_EXECUCAO.md` remains an intentional historical artifact.
+
+### Final read-only audit follow-up
+
+- The final read-only audit found one documentation discrepancy: `README.md`
+  used the shortened model name `Qwen3-235B-A22B-Instruct`, while the tracked
+  source configured `Qwen/Qwen3-235B-A22B-Instruct-2507`.
+- The discrepancy was corrected in the preceding
+  `docs: correct README model identifier` commit.
+- The final audit remains incomplete and must be rerun after this correction.
 
 ## 6. Remaining work
 
