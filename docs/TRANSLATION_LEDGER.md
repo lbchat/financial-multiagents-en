@@ -9,7 +9,7 @@ remains authoritative.
 - Original Portuguese repository: `lbchat/entrega-multiagents`
 - English repository: `lbchat/financial-multiagents-en`
 - Translation branch: `translate-to-english`
-- Recorded translation HEAD: `06b0bbb19c0266d7809e7b98a9c744c9a8a48da8`
+- Recorded translation HEAD: `efd0906474cec5a86a958c617bb9da8743c696db`
 - Baseline commit: `4cf6d3a4bdb2234baec30746809d55467a07d641`
 - Baseline tag: `pre-translation-baseline`
 - The original Portuguese repository must remain untouched.
@@ -68,6 +68,10 @@ remains authoritative.
 - [x] `967139e` — `docs: translate sentiment and technical test docstrings`
 - [x] `09927b5` — `docs: translate notebook code-cell docstrings`
 - [x] `06b0bbb` — `docs: translate notebook Markdown documentation`
+- [x] `a8fd571` — `docs: translate remaining backtest stage labels`
+- [x] `20eb35c` — `docs: update current architecture and setup guidance`
+- [x] `0c5ad8b` — `docs: align decisions and development patterns with source`
+- [x] `efd0906` — `docs: reconcile current project progress`
 
 ## 5. Protected inventory
 
@@ -85,6 +89,18 @@ remains authoritative.
 - FinBERT mappings
 - Historical CSV, PNG, and notebook-output content
 
+### Confirmed repository-wide audit result
+
+- 73 tracked files were inspected.
+- 1,198 PT-BR units were independently reviewed.
+- 2 missed developer-facing spans were found and corrected.
+- 0 uncertain items remain.
+- All remaining PT-BR content is intentionally protected under the approved
+  language policy.
+- All five protected `@tool` docstrings remain PT-BR.
+- The protected `# AGUARDAR` comment remains unchanged.
+- `PLANO_DE_EXECUCAO.md` remains an intentional historical artifact.
+
 ## 6. Remaining work
 
 - [x] Phase 2B-7 — safe tool-module annotations
@@ -95,8 +111,8 @@ remains authoritative.
 - [x] Phase 2B-11 — notebook code-cell docstrings
 - [x] Translate notebook Markdown cells while preserving all outputs and
   metadata
-- [ ] Repository-wide Portuguese occurrence audit
-- [ ] Documentation-accuracy corrections in separate commits
+- [x] Repository-wide Portuguese occurrence audit
+- [x] Documentation-accuracy corrections in separate commits
 - [ ] Final diff, AST, notebook, artifact, and contract audit
 - [ ] Push translation branch
 - [ ] Open and review pull request
