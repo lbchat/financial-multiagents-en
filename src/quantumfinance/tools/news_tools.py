@@ -1,4 +1,4 @@
-"""Tools de sentimento registradas no SentimentAgent."""
+"""Sentiment tools registered with SentimentAgent."""
 
 from langchain_core.tools import tool
 from quantumfinance.data.news_data import fetch_news

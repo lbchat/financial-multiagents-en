@@ -29,7 +29,7 @@ Nunca interprete o sentimento como recomendação de compra ou venda."""
 
 
 def build_sentiment_agent():
-    """Constrói o SentimentAgent com suas tools registradas."""
+    """Builds the SentimentAgent with its registered tools."""
     return create_react_agent(
         model=get_llm(),
         tools=[get_sentiment_features],

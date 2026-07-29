@@ -1,11 +1,11 @@
-"""Cálculo de indicadores técnicos via pandas-ta."""
+"""Technical indicator calculation via pandas-ta."""
 
 import pandas as pd
 import pandas_ta as ta
 
 
 def calculate_indicators(data: pd.DataFrame) -> dict:
-    """Calcula RSI, MACD, médias móveis e Bandas de Bollinger a partir de um DataFrame OHLCV."""
+    """Calculates RSI, MACD, moving averages, and Bollinger Bands from an OHLCV DataFrame."""
     df = data.copy()
 
     df["rsi"] = ta.rsi(df["Close"], length=14)

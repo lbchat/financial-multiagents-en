@@ -1,4 +1,4 @@
-"""Teste de fumaça do agente completo."""
+"""Smoke test for the complete agent."""
 from quantumfinance.agents.orchestrator import ask
 
 print("=" * 50)

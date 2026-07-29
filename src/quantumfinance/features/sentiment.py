@@ -1,4 +1,4 @@
-"""Classificação de sentimento financeiro via FinBERT-PT-BR."""
+"""Financial sentiment classification via FinBERT-PT-BR."""
 
 from functools import lru_cache
 
@@ -6,12 +6,12 @@ import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 MODEL_NAME = "lucas-leme/FinBERT-PT-BR"
-HEADLINE_SUMMARY_EXCERPT_LENGTH = 100  # tamanho do trecho do resumo anexado à manchete
+HEADLINE_SUMMARY_EXCERPT_LENGTH = 100  # length of summary excerpt appended to the headline
 
 
 @lru_cache(maxsize=1)
 def _load_model():
-    """Carrega o tokenizer e modelo FinBERT-PT-BR uma única vez (cache em memória)."""
+    """Loads the FinBERT-PT-BR tokenizer and model once (in-memory cache)."""
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
     model.eval()
@@ -19,7 +19,7 @@ def _load_model():
 
 
 def classify_sentiment(text: str) -> dict:
-    """Classifica o sentimento de um texto financeiro em português."""
+    """Classifies the sentiment of Portuguese financial text."""
     tokenizer, model = _load_model()
 
     inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=512)
@@ -27,7 +27,7 @@ def classify_sentiment(text: str) -> dict:
         outputs = model(**inputs)
         probs = torch.nn.functional.softmax(outputs.logits, dim=-1)[0]
 
-    # labels do modelo (confirmado via AutoConfig.id2label): 0=POSITIVE, 1=NEGATIVE, 2=NEUTRAL
+    # model labels (confirmed via AutoConfig.id2label): 0=POSITIVE, 1=NEGATIVE, 2=NEUTRAL
     labels = ["POSITIVO", "NEGATIVO", "NEUTRO"]
     scores = {label: round(float(probs[i]), 4) for i, label in enumerate(labels)}
     dominant_label = labels[int(torch.argmax(probs))]
@@ -40,7 +40,7 @@ def classify_sentiment(text: str) -> dict:
 
 
 def _format_headline(item: dict) -> str:
-    """Anexa um trecho do resumo ao título quando ele agrega informação não visível no título sozinho."""
+    """Appends a summary excerpt to the headline when it adds information not visible in the headline alone."""
     title = item["title"]
     summary = item.get("summary", "").strip()
 
@@ -55,7 +55,7 @@ def _format_headline(item: dict) -> str:
 
 
 def aggregate_sentiment(news_items: list[dict]) -> dict:
-    """Agrega o sentimento de uma lista de notícias em um score consolidado."""
+    """Aggregates sentiment from a list of news items into a consolidated score."""
     if not news_items:
         return {
             "sentiment_score": 0.5,
@@ -70,13 +70,13 @@ def aggregate_sentiment(news_items: list[dict]) -> dict:
         result = classify_sentiment(text)
         classified.append({**item, **result})
 
-    # score consolidado: média de (positivo - negativo), normalizado para 0-1
+    # consolidated score: mean of (positive - negative), normalized to 0-1
     raw_scores = [
         c["scores"]["POSITIVO"] - c["scores"]["NEGATIVO"]
         for c in classified
     ]
     avg_raw = sum(raw_scores) / len(raw_scores)
-    sentiment_score = round((avg_raw + 1) / 2, 4)  # normaliza de [-1,1] para [0,1]
+    sentiment_score = round((avg_raw + 1) / 2, 4)  # normalizes from [-1,1] to [0,1]
 
     if sentiment_score > 0.6:
         sentiment_label = "POSITIVO"

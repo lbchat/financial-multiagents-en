@@ -1,4 +1,4 @@
-"""Interface conversacional Gradio do QuantumFinance AI Agent."""
+"""Gradio conversational interface for the QuantumFinance AI Agent."""
 
 import re
 from functools import partial
@@ -27,7 +27,7 @@ NO_TRACE_MESSAGE = "Nenhuma etapa intermediária registrada para esta pergunta."
 
 
 def find_unmonitored_ticker(question: str) -> str | None:
-    """Identifica um ticker citado na pergunta que não está no universo monitorado."""
+    """Identifies a ticker mentioned in the question that is not in the monitored ticker universe."""
     for match in TICKER_PATTERN.findall(question.upper()):
         if match not in TICKERS:
             return match
@@ -35,7 +35,7 @@ def find_unmonitored_ticker(question: str) -> str | None:
 
 
 def build_trace(messages: list) -> str:
-    """Monta um resumo legível das etapas intermediárias (tool calls e respostas) do agente."""
+    """Builds a readable summary of the agent's intermediate steps (tool calls and responses)."""
     lines = []
     for message in messages:
         message_type = type(message).__name__
@@ -51,7 +51,7 @@ def build_trace(messages: list) -> str:
 
 
 def safe_ask(question: str) -> tuple[str, str]:
-    """Envia a pergunta ao orquestrador, sempre retornando mensagens amigáveis em caso de erro."""
+    """Sends the question to the orchestrator, always returning friendly messages in case of error."""
     unmonitored = find_unmonitored_ticker(question)
     if unmonitored:
         message = f"Ticker não monitorado: {unmonitored}. Tickers disponíveis: {', '.join(TICKERS)}."
@@ -77,7 +77,7 @@ def safe_ask(question: str) -> tuple[str, str]:
 
 
 def format_sidebar() -> str:
-    """Formata as últimas 5 recomendações do CSV para exibição na barra lateral."""
+    """Formats the five most recent recommendations from the CSV for display in the sidebar."""
     rows = load_recommendations()
     if not rows:
         return "_Nenhuma recomendação registrada ainda. Faça uma pergunta de recomendação completa para começar o histórico._"
@@ -90,11 +90,11 @@ def format_sidebar() -> str:
 
 
 def respond(question: str, history: list[dict]) -> tuple[list[dict], str, str]:
-    """Processa a pergunta do usuário e atualiza conversa e barra lateral.
+    """Processes the user's question and updates the conversation and sidebar.
 
-    O raciocínio do agente vai embutido em tags <thinking> no conteúdo da
-    mensagem; o gr.Chatbot (reasoning_tags) extrai isso automaticamente e
-    exibe como uma bolha colapsável "Reasoning" antes da resposta final.
+    The agent's reasoning is embedded in <thinking> tags in the message
+    content; gr.Chatbot (reasoning_tags) extracts it automatically and
+    displays it as a collapsible "Reasoning" bubble before the final response.
     """
     if not question or not question.strip():
         return history, "", format_sidebar()
@@ -109,7 +109,7 @@ def respond(question: str, history: list[dict]) -> tuple[list[dict], str, str]:
 
 
 def clear_conversation() -> tuple[list[dict], str, str]:
-    """Limpa a conversa, mantendo a barra lateral atualizada."""
+    """Clears the conversation while retaining an updated sidebar."""
     return [], "", format_sidebar()
 
 

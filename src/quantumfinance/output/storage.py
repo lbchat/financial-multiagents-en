@@ -1,4 +1,4 @@
-"""Módulo de persistência de recomendações em CSV."""
+"""Recommendation persistence module using CSV."""
 
 import csv
 from pathlib import Path
@@ -13,7 +13,7 @@ FIELDNAMES = [
 
 
 def save_recommendation(data: dict) -> None:
-    """Persiste uma recomendação no CSV histórico."""
+    """Persists a recommendation in the historical CSV."""
     RECOMMENDATIONS_PATH.parent.mkdir(parents=True, exist_ok=True)
     write_header = not RECOMMENDATIONS_PATH.exists()
 
@@ -25,7 +25,7 @@ def save_recommendation(data: dict) -> None:
 
 
 def load_recommendations() -> list[dict]:
-    """Carrega o histórico de recomendações do CSV."""
+    """Loads the recommendation history from the CSV."""
     if not RECOMMENDATIONS_PATH.exists():
         return []
     with open(RECOMMENDATIONS_PATH, "r", encoding="utf-8") as f:

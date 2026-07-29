@@ -1,4 +1,4 @@
-"""Testes do modelo de saída estruturada de recomendação."""
+"""Tests for the structured recommendation output model."""
 
 import pytest
 from pydantic import ValidationError
@@ -20,7 +20,7 @@ VALID_FIELDS = {
 
 
 def test_recommendation_accepts_only_valid_values():
-    """Valida que Recommendation aceita apenas COMPRAR, VENDER e AGUARDAR."""
+    """Validates that Recommendation accepts only COMPRAR, VENDER, and AGUARDAR."""
     assert Recommendation("COMPRAR") == Recommendation.COMPRAR
     assert Recommendation("VENDER") == Recommendation.VENDER
     assert Recommendation("AGUARDAR") == Recommendation.AGUARDAR
@@ -29,29 +29,29 @@ def test_recommendation_accepts_only_valid_values():
 
 
 def test_recommendation_output_rejects_confidence_out_of_range():
-    """Valida que RecommendationOutput rejeita confidence fora de 0-1."""
+    """Validates that RecommendationOutput rejects confidence outside the 0-1 range."""
     with pytest.raises(ValidationError):
         RecommendationOutput(**{**VALID_FIELDS, "confidence": 1.5})
 
 
 def test_recommendation_output_rejects_invalid_date_format():
-    """Valida que RecommendationOutput rejeita date fora do formato YYYY-MM-DD."""
+    """Validates that RecommendationOutput rejects date outside the YYYY-MM-DD format."""
     with pytest.raises(ValidationError):
         RecommendationOutput(**{**VALID_FIELDS, "date": "20/06/2026"})
 
 
 def test_recommendation_output_accepts_valid_data():
-    """Valida que dados válidos são aceitos sem erro."""
+    """Validates that valid data is accepted without error."""
     output = RecommendationOutput(**VALID_FIELDS)
     assert output.recommendation == Recommendation.COMPRAR
 
 
 def test_recommendation_output_serializes_enum_as_plain_string():
-    """Valida que model_dump(mode="json") serializa o enum como string pura.
+    """Validates that model_dump(mode="json") serializes the enum as a plain string.
 
-    Protege contra regressão do bug onde model_dump() simples retorna o
-    membro do enum (<Recommendation.COMPRAR: 'COMPRAR'>) em vez da string
-    "COMPRAR", o que corrompe a escrita em CSV via csv.DictWriter.
+    Protects against regression of the bug where plain model_dump() returns the
+    enum member (<Recommendation.COMPRAR: 'COMPRAR'>) instead of the string
+    "COMPRAR", which corrupts CSV writing via csv.DictWriter.
     """
     output = RecommendationOutput(
         ticker="PETR4",

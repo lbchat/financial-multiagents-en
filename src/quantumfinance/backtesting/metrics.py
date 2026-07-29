@@ -1,12 +1,12 @@
-"""Métricas de avaliação do backtest."""
+"""Backtest evaluation metrics."""
 
 import pandas as pd
 
-AGUARDAR_NEUTRAL_THRESHOLD = 2.0  # |retorno| abaixo disso conta como acerto para AGUARDAR
+AGUARDAR_NEUTRAL_THRESHOLD = 2.0  # |retorno| below this counts as a hit for AGUARDAR
 
 
 def _is_hit(recommendation: str, forward_return: float) -> bool:
-    """Valida se a recomendação bateu com a direção real do retorno."""
+    """Checks whether the recommendation matched the actual return direction."""
     if recommendation == "COMPRAR":
         return forward_return > 0
     if recommendation == "VENDER":
@@ -15,7 +15,7 @@ def _is_hit(recommendation: str, forward_return: float) -> bool:
 
 
 def calculate_metrics(results: pd.DataFrame) -> dict:
-    """Calcula métricas de avaliação a partir dos resultados do backtest."""
+    """Calculates evaluation metrics from the backtest results."""
     valid = results.dropna(subset=["forward_return_5d"])
     beat_ibov_valid = results.dropna(subset=["beat_ibov"])
 

@@ -6,7 +6,7 @@ from quantumfinance.tools.context_tools import analyze_context
 
 
 def build_context_router_agent(ticker: str):
-    """Constrói o ContextRouterAgent com as esferas do ticker injetadas no prompt."""
+    """Builds the ContextRouterAgent with the ticker's spheres injected into the prompt."""
     spheres_text = ", ".join(get_context_keywords(ticker).keys())
 
     prompt = f"""Você é o ContextRouterAgent para o ticker {ticker}.

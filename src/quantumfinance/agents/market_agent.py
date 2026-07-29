@@ -20,7 +20,7 @@ Nunca emita recomendações de compra ou venda."""
 
 
 def build_market_agent():
-    """Constrói o MarketAgent com suas tools registradas."""
+    """Builds the MarketAgent with its registered tools."""
     return create_react_agent(
         model=get_llm(),
         tools=[get_market_features],

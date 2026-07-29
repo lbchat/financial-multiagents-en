@@ -1,49 +1,61 @@
 # QuantumFinance AI Agent
 
-Sistema multiagente de recomendação de ações brasileiras (COMPRAR / VENDER / AGUARDAR) combinando indicadores técnicos e análise de sentimento de notícias, com justificativa auditável.
+Multi-agent system for recommending Brazilian stocks (COMPRAR / VENDER / AGUARDAR) by combining technical indicators and news sentiment analysis, with an auditable rationale.
 
 ## Stack
 - Python 3.11+, LangGraph, DeepInfra API (Qwen/Qwen3-235B-A22B-Instruct-2507)
-- FinBERT-PT-BR — sentimento financeiro em português
-- yfinance + feedparser — dados de mercado e notícias RSS
-- pandas-ta — indicadores técnicos (nunca TA-Lib)
-- Gradio — interface conversacional
-- pytest + ruff + mypy — testes, lint e tipos
+- FinBERT-PT-BR—Portuguese financial sentiment
+- yfinance + feedparser—market data and RSS news
+- pandas-ta—technical indicators (never TA-Lib)
+- Gradio—conversational interface
+- pytest + ruff + mypy—tests, linting, and types
 
-## Ambiente
-- Windows 11, PowerShell — usar comandos PowerShell, não bash
+## Environment
+- Windows 11, PowerShell—use PowerShell commands, not bash
 
-## Estrutura
-- `src/quantumfinance/data/` — coleta de preços e notícias
-- `src/quantumfinance/features/` — indicadores técnicos e sentimento
-- `src/quantumfinance/agents/` — orquestrador e agentes especializados
-- `src/quantumfinance/tools/` — tools registradas nos agentes
-- `src/quantumfinance/output/` — formatação e persistência
-- `src/quantumfinance/app/` — Gradio
-- `tests/` — pytest focado em funções críticas
-- `data/` — recommendations.csv e sessions.json (gerados em runtime)
+## Language policy
+- English is the repository's engineering and documentation language and should be used for repository, architecture, planning, and development documentation; source-code comments; test comments and explanatory documentation; notebook Markdown and developer comments; ordinary developer-facing docstrings; and other non-runtime annotations.
+- Brazilian Portuguese must remain the language of user questions; agent answers and recommendation explanations; Gradio interface text and example questions; runtime warnings, errors, status, and progress messages; agent, router, and recommendation-narration prompts; LLM-visible tool descriptions and `@tool` docstrings; manual agent-test prompts and demo interactions; financial-news keywords and aliases; FinBERT inputs and label mappings; contextual keyword maps; and future persisted recommendation reasoning.
+- Never claim that English runtime input or output is supported or validated.
+- Ordinary developer-facing docstrings must be written in English. Docstrings exposed to LangChain or an LLM, or reused as runtime help, prompt content, tool-selection guidance, or user-visible text, must remain in Brazilian Portuguese.
+- When uncertain whether a docstring is LLM-visible or runtime-visible, preserve it in Portuguese and flag it for review.
+- Preserve `COMPRAR`, `VENDER`, `AGUARDAR`, `POSITIVO`, `NEGATIVO`, and `NEUTRO`, as well as routing labels, schema keys, CSV fields, dictionary keys, DataFrame columns, persisted values, Portuguese keyword lists, model mappings, identifiers, filenames, and paths.
 
-## Comandos
+## Structure
+- `src/quantumfinance/data/`—price and news collection
+- `src/quantumfinance/features/`—technical indicators and sentiment
+- `src/quantumfinance/agents/`—five agent roles and the LangGraph orchestrator
+- `src/quantumfinance/tools/`—tools registered with the agents
+- `src/quantumfinance/context/`—Asset Context Map and thematic news routing
+- `src/quantumfinance/output/`—formatting and persistence
+- `src/quantumfinance/backtesting/`—historical simulation and metrics
+- `src/quantumfinance/app/`—Gradio
+- `src/quantumfinance/universe.py`—monitored ticker universe
+- `src/quantumfinance/config.py`—DeepInfra LLM configuration
+- `tests/`—pytest focused on critical functions
+- `data/`—backtest artifacts and `recommendations.csv` when generated at runtime; session-file persistence is not implemented
+
+## Commands
 - Interface: `python src/quantumfinance/app/gradio_app.py`
-- Testes: `pytest tests/ -v`
+- Tests: `pytest tests/ -v`
 - Lint: `ruff check src/`
-- Tipos: `mypy src/`
+- Types: `mypy src/`
 
-## Verificação após cada mudança
-1. `mypy src/` — corrigir erros de tipo
-2. `pytest tests/ -v` — corrigir testes quebrados
-3. `ruff check src/` — corrigir lint
+## Verification after every change
+1. `mypy src/`—fix type errors
+2. `pytest tests/ -v`—fix failing tests
+3. `ruff check src/`—fix lint issues
 
-## Não faça
-- Nunca use TA-Lib — use pandas-ta
-- Nunca hardcode tickers — use `TICKERS` de `config.py`
-- Nunca hardcode API keys — use `.env` via python-dotenv
-- Nunca coloque lógica de negócio nos agentes — fica nas tools e em `features/`
-- Nunca embaralhe dados no backtest — sempre ordem temporal
-- Nunca use model_dump() simples em RecommendationOutput — sempre model_dump(mode="json") para garantir serialização correta do enum Recommendation.
+## Do not
+- Never use TA-Lib—use pandas-ta
+- Never hard-code tickers—use `TICKERS` from `src/quantumfinance/universe.py`
+- Never hard-code API keys—use `.env` through python-dotenv
+- Never put business logic in the agents—it belongs in the tools and in `features/`
+- Never shuffle backtest data—always use chronological order
+- Never use a plain model_dump() on RecommendationOutput—always use model_dump(mode="json") to ensure correct serialization of the Recommendation enum.
 
-## Referências
-- Arquitetura e decisões: `docs/decisions.md`
-- Padrões de código e exemplos de tools: `docs/patterns.md`
-- Estado atual e próximas etapas: `docs/progress.md`
-- Estilo de código: `docs/code-style.md`
+## References
+- Architecture and decisions: `docs/decisions.md`
+- Code patterns and tool examples: `docs/patterns.md`
+- Current status and next stages: `docs/progress.md`
+- Code style: `docs/code-style.md`

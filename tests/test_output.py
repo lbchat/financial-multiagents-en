@@ -1,4 +1,4 @@
-"""Testes de persistência de recomendações em CSV."""
+"""Tests for recommendation persistence in CSV."""
 
 import quantumfinance.output.storage as storage
 
@@ -17,7 +17,7 @@ SAMPLE_RECOMMENDATION = {
 
 
 def test_save_recommendation_creates_file_if_missing(tmp_path, monkeypatch):
-    """Valida que save_recommendation cria o arquivo se não existir."""
+    """Validates that save_recommendation creates the file if it does not exist."""
     csv_path = tmp_path / "recommendations.csv"
     monkeypatch.setattr(storage, "RECOMMENDATIONS_PATH", csv_path)
 
@@ -27,7 +27,7 @@ def test_save_recommendation_creates_file_if_missing(tmp_path, monkeypatch):
 
 
 def test_save_recommendation_appends_without_overwriting(tmp_path, monkeypatch):
-    """Valida que save_recommendation adiciona linha sem sobrescrever existentes."""
+    """Validates that save_recommendation appends a row without overwriting existing rows."""
     csv_path = tmp_path / "recommendations.csv"
     monkeypatch.setattr(storage, "RECOMMENDATIONS_PATH", csv_path)
 
@@ -41,7 +41,7 @@ def test_save_recommendation_appends_without_overwriting(tmp_path, monkeypatch):
 
 
 def test_load_recommendations_returns_empty_list_if_file_missing(tmp_path, monkeypatch):
-    """Valida que load_recommendations retorna lista vazia se arquivo não existir."""
+    """Validates that load_recommendations returns an empty list if the file does not exist."""
     csv_path = tmp_path / "recommendations.csv"
     monkeypatch.setattr(storage, "RECOMMENDATIONS_PATH", csv_path)
 

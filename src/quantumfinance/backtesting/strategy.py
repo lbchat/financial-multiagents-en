@@ -1,4 +1,4 @@
-"""Runner do backtest histórico com lógica de decisão determinística (sem LLM)."""
+"""Historical backtest runner with deterministic decision logic (without LLM)."""
 
 from pathlib import Path
 
@@ -17,7 +17,7 @@ RESULT_COLUMNS = [
     "sentiment_score", "sentiment_source", "forward_return_5d", "ibovespa_return_5d", "beat_ibov",
 ]
 
-PLACEHOLDER_SENTIMENT_SCORE = 0.5  # sentimento neutro usado quando o GDELT está desativado
+PLACEHOLDER_SENTIMENT_SCORE = 0.5  # neutral sentiment used when GDELT is disabled
 
 
 def run_backtest(
@@ -27,18 +27,18 @@ def run_backtest(
     output_path: str = "data/backtest_results.csv",
     use_gdelt: bool = True,
 ) -> pd.DataFrame:
-    """Roda o backtest histórico para os tickers informados, sem chamadas de LLM.
+    """Runs the historical backtest for the specified tickers, without LLM calls.
 
-    Com `use_gdelt=True`, busca sentimento histórico real via GDELT
-    (`fetch_gdelt_sentiment`); com `use_gdelt=False`, usa sentimento neutro
-    fixo (comportamento original, sem chamadas externas extras).
+    With `use_gdelt=True`, fetches real historical sentiment via GDELT
+    (`fetch_gdelt_sentiment`); with `use_gdelt=False`, uses fixed neutral
+    sentiment (original behavior, without additional external calls).
     """
     business_days = pd.bdate_range(start_date, end_date)
     rows = []
 
     for date in business_days:
         date_str = date.strftime("%Y-%m-%d")
-        # o Ibovespa não depende do ticker: calcula uma vez por dia, não uma vez por ticker
+        # Ibovespa does not depend on the ticker: calculated once per day, not once per ticker
         ibovespa_return = get_ibovespa_return(date_str)
 
         for ticker in tickers:

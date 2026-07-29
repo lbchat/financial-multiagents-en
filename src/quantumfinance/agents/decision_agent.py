@@ -14,9 +14,9 @@ class Recommendation(str, Enum):
 
 class RecommendationOutput(BaseModel):
     ticker: str
-    date: str                    # formato YYYY-MM-DD
+    date: str                    # YYYY-MM-DD format
     recommendation: Recommendation
-    confidence: float            # 0.0 a 1.0
+    confidence: float            # 0.0 to 1.0
     rsi: float
     macd_signal: str
     sentiment_score: float
@@ -27,7 +27,7 @@ class RecommendationOutput(BaseModel):
     @field_validator("date")
     @classmethod
     def validate_date_format(cls, v: str) -> str:
-        """Valida que a data está no formato YYYY-MM-DD."""
+        """Validates that the date is in YYYY-MM-DD format."""
         from datetime import datetime
         datetime.strptime(v, "%Y-%m-%d")
         return v
@@ -35,7 +35,7 @@ class RecommendationOutput(BaseModel):
     @field_validator("confidence")
     @classmethod
     def validate_confidence_range(cls, v: float) -> float:
-        """Valida que a confiança está entre 0 e 1."""
+        """Validates that confidence is between 0 and 1."""
         if not 0.0 <= v <= 1.0:
             raise ValueError("confidence deve estar entre 0.0 e 1.0")
         return v
@@ -50,7 +50,7 @@ Sempre explique o raciocínio em linguagem natural acessível ao usuário."""
 
 
 def build_decision_agent():
-    """Constrói o DecisionAgent com suas tools registradas."""
+    """Builds the DecisionAgent with its registered tools."""
     from quantumfinance.tools.decision_tools import generate_recommendation
 
     return create_react_agent(

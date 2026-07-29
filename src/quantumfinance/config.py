@@ -1,4 +1,4 @@
-"""Configurações globais e inicialização do LLM."""
+"""Global configuration and LLM initialization."""
 
 import os
 from dotenv import load_dotenv
@@ -9,7 +9,7 @@ load_dotenv()
 
 
 def get_llm() -> ChatOpenAI:
-    """Retorna instância configurada do LLM via DeepInfra."""
+    """Returns the configured LLM instance via DeepInfra."""
     api_key = os.getenv("DEEPINFRA_API_KEY")
     if not api_key:
         raise RuntimeError("DEEPINFRA_API_KEY não encontrada. Configure o arquivo .env")
